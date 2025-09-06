@@ -1,9 +1,9 @@
-/* 1. Универсальный селектор — box-sizing: border-box */
+/*  Универсальный селектор — box-sizing: border-box */
 * {
     box-sizing: border-box;
 }
 
-/* 2. Стиль хедера */
+/* Стиль хедера */
 
 body {
     margin: 0;
@@ -59,11 +59,18 @@ a:hover {
 }
 
 /* Стили для изображений */
-img {
-    width: 40%;
-    height: auto;
+.image_conteiner {
+    display: flex;
+    justify-content: space-between; /* или space-around, center */
+    gap: 5%; /* отступ между картинками — например, 5% */
     margin-top: 30px;
-    border-radius: 12px; 
+    padding: 0 10px; /* небольшой отступ по бокам, чтобы не прилипали к краю */
+}
+
+.image_conteiner img {
+    width: 47.5%; /* (100% - 5% gap) / 2 = 47.5% */
+    height: auto;
+    border-radius: 12px;
 }
 
 /* Стили для таблиц */
