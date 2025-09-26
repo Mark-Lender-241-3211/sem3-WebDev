@@ -1,0 +1,116 @@
+/* Стили специфичные для страницы ланча */
+
+/* Основное содержимое для страницы ланча */
+main {
+    flex: 1;
+    padding-top: 80px; /* Чтобы не закрывал header */
+    padding: 80px 20px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Заголовки разделов */
+main h2 {
+    font-size: 1.5rem;
+    margin: 40px 0 20px;
+    font-weight: 700;
+    color: #000;
+}
+
+/* Сетка блюд */
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 40px;
+}
+
+/* Карточка блюда */
+.menu-item {
+    background: white;
+    border-radius: 35px;
+    overflow: hidden;
+    padding: 30px 40px;
+    box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s ease;
+}
+.menu-item:hover {
+    transform: translateY(-5px);
+}
+
+/* Изображение */
+.menu-item img {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+    border-radius: 35px;
+}
+
+/* Информация о блюде */
+.menu-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.menu-info .price {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #333;
+    margin-top: 10px;
+}
+
+.menu-info .name {
+    font-size: 1.2rem;
+    margin: 5px 0;
+    color: #333;
+}
+
+.menu-info .weight {
+    color: #888;
+    font-size: 0.9rem;
+    margin: 5px 0;
+}
+
+/* Кнопка "Добавить" */
+.add-btn {
+    margin-top: 15px;
+    padding: 10px 30px;
+    background-color: #f1eee9;
+    color: #333;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+.add-btn:hover {
+    background-color: #dadada;
+}
+
+
+/* Адаптивность */
+
+/* До 800px — 2 колонки */
+@media (max-width: 800px) {
+    .menu-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* До 600px — 1 колонка */
+@media (max-width: 600px) {
+    .menu-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .menu-item {
+        padding: 20px;
+    }
+
+    .menu-item img {
+        height: 200px;
+    }
+}
