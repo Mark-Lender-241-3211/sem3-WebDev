@@ -17,11 +17,9 @@ body {
 }
 
 header {
-    position: fixed;
+    position: sticky;
     top: 0;
-    left: 0;
-    right: 0;
-    z-index: 100;
+    z-index: 10;
     background-color: black;
     color: white;
     padding: 10px 20px;
@@ -114,4 +112,50 @@ footer {
     font-family: 'Roboto', sans-serif;
     font-size: 1.25rem;
     margin: 0;
+}
+
+/* Адаптивность для хедера */
+
+/* До 800px — выравнивание навигации */
+@media (max-width: 800px) {
+    header nav ul {
+        justify-content: space-between;
+    }
+}
+
+/* До 600px — мобильная версия хедера */
+@media (max-width: 600px) {
+    /* Изменить layout хедера для мобильных устройств */
+    header {
+        flex-direction: row; /* Горизонтальное расположение */
+        justify-content: space-between; /* Заголовок слева, меню справа */
+        align-items: center; /* Центрирование по высоте */
+        gap: 15px;
+        padding: 10px 15px;
+    }
+    
+    /* Заголовок слева, центрированный по высоте */
+    header h1 {
+        text-align: left;
+        margin: 0;
+        font-size: 1.1rem; /* Уменьшаем размер заголовка */
+        flex: 0 0 auto; /* Не растягивается */
+    }
+    
+    /* Навигационное меню справа - вертикальное направление */
+    header nav {
+        flex: 0 0 auto; /* Не растягивается */
+    }
+    
+    header nav ul {
+        flex-direction: column;
+        align-items: flex-end; /* Выравнивание по правому краю */
+        gap: 8px;
+        justify-content: center;
+    }
+    
+    /* Уменьшаем шрифт для ссылок навигации */
+    header nav ul a {
+        font-size: 1.1rem; /* Уменьшаем размер ссылок */
+    }
 }
