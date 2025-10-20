@@ -11,6 +11,7 @@
     
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="set-lunch-styles.css">
+    
 
 </head>
 <body>
@@ -29,13 +30,24 @@
     <main>
         <section id="set_lunch">
             <h2>Выберите суп</h2>
+            <div class="filters" id="soupsFilters"></div>
             <div class="menu-grid" id="soupsGrid"></div>
 
             <h2>Выберите главное блюдо</h2>
+            <div class="filters" id="mainsFilters"></div>
             <div class="menu-grid" id="mainsGrid"></div>
 
             <h2>Выберите напиток</h2>
+            <div class="filters" id="beveragesFilters"></div>
             <div class="menu-grid" id="beveragesGrid"></div>
+
+            <h2>Выберите салат или стартер</h2>
+            <div class="filters" id="startersFilters"></div>
+            <div class="menu-grid" id="startersGrid"></div>
+
+            <h2>Выберите десерт</h2>
+            <div class="filters" id="dessertsFilters"></div>
+            <div class="menu-grid" id="dessertsGrid"></div>
         </section>
 
         <!-- Форма заказа -->
@@ -159,5 +171,6 @@
 
     <script src="js/dishes-data.js"></script>
     <script src="js/menu.js"></script>
+    <script src="js/filters-data.js"></script> 
 </body>
 </html>

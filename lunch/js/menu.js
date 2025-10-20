@@ -1,15 +1,19 @@
-// Render dishes into the three grids; handle selection and total cost
 (function () {
-  const CATEGORY_TO_GRID = {
-    soup: 'soupsGrid',
-    main_course: 'mainsGrid',
-    beverages: 'beveragesGrid',
-  };
-
   const categoryLabels = {
     soup: 'Суп',
     main_course: 'Главное блюдо',
     beverages: 'Напиток',
+    starters: 'Салат или стартер',
+    desserts: 'Десерт',
+  };
+
+  // Глобальное состояние фильтров
+  const activeFilters = {
+    soup: null,
+    main_course: null,
+    beverages: null,
+    starters: null,
+    desserts: null,
   };
 
   function sortDishesAlphabetically(dishes) {
@@ -20,6 +24,7 @@
     const item = document.createElement('div');
     item.className = 'menu-item';
     item.setAttribute('data-dish', dish.keyword);
+    item.setAttribute('data-kind', dish.kind);
     item.innerHTML = `
       <img src="menu/${dish.image}.jpg" alt="${dish.name}">
       <div class="menu-info">
@@ -32,32 +37,78 @@
     return item;
   }
 
-  function renderMenu() {
-    const byCategory = DISHES.reduce((acc, d) => {
-      if (!acc[d.category]) {
-        acc[d.category] = [];
-      }
-      acc[d.category].push(d);
-      return acc;
-    }, {});
+  function renderFilters() {
+    Object.entries(FILTERS_DATA).forEach(([cat, filter]) => {
+      const filterContainer = document.getElementById(filter.filterId);
+      if (!filterContainer) return;
 
-    Object.keys(CATEGORY_TO_GRID).forEach((cat) => {
-      const grid = document.getElementById(CATEGORY_TO_GRID[cat]);
-      if (!grid) return;
-
-      grid.innerHTML = '';
-
-      sortDishesAlphabetically(byCategory[cat] || []).forEach((dish) => {
-        const card = buildCard(dish);
-        grid.appendChild(card);
+      filterContainer.innerHTML = '';
+      filter.filters.forEach((f) => {
+        const btn = document.createElement('button');
+        btn.textContent = f.label;
+        btn.dataset.kind = f.kind;
+        btn.dataset.category = cat;
+        btn.addEventListener('click', handleFilterClick);
+        filterContainer.appendChild(btn);
       });
     });
   }
 
+  function handleFilterClick(e) {
+    const btn = e.target;
+    const category = btn.dataset.category;
+    const kind = btn.dataset.kind;
+    const isActive = btn.classList.contains('active');
+
+    // Сброс активного состояния у всех кнопок в категории
+    document.querySelectorAll(`[data-category="${category}"]`).forEach((b) => {
+      b.classList.remove('active');
+    });
+
+    if (isActive) {
+      // Сброс фильтра
+      activeFilters[category] = null;
+    } else {
+      // Установка нового фильтра
+      activeFilters[category] = kind;
+      btn.classList.add('active');
+    }
+
+    renderCategory(category);
+  }
+
+  function renderCategory(category) {
+    const config = FILTERS_DATA[category];
+    if (!config) return;
+
+    const grid = document.getElementById(config.gridId);
+    if (!grid) return;
+
+    const allDishes = DISHES.filter((d) => d.category === category);
+    let dishesToShow = allDishes;
+
+    if (activeFilters[category]) {
+      dishesToShow = allDishes.filter((d) => d.kind === activeFilters[category]);
+    }
+
+    grid.innerHTML = '';
+    sortDishesAlphabetically(dishesToShow).forEach((dish) => {
+      const card = buildCard(dish);
+      grid.appendChild(card);
+    });
+  }
+
+  function renderAllMenus() {
+    Object.keys(FILTERS_DATA).forEach(renderCategory);
+  }
+
+  // === Логика выбора блюд (сохраняется) ===
   const selected = {
     soup: null,
     main_course: null,
     beverages: null,
+    starters: null,
+    desserts: null,
   };
 
   function updateSummaryVisibility() {
@@ -65,17 +116,18 @@
     const nothing = document.getElementById('nothing-selected');
     const totalBlock = document.getElementById('order-total');
 
-    nothing.style.display = hasAny ? 'none' : '';
+    nothing.style.display = hasAny ? 'none' : 'block';
 
-    ['soup', 'main_course', 'beverages'].forEach((cat) => {
+    Object.keys(selected).forEach((cat) => {
       const holder = document.querySelector(`#selectedSummary [data-cat="${cat}"]`);
-      if (!holder) return;
-      holder.style.display = hasAny ? '' : 'none';
+      if (holder) {
+        holder.style.display = hasAny ? 'block' : 'none';
+      }
     });
 
     const total = Object.values(selected).reduce((sum, d) => sum + (d ? d.price : 0), 0);
     if (hasAny) {
-      totalBlock.style.display = '';
+      totalBlock.style.display = 'block';
       document.getElementById('orderTotalValue').textContent = String(total);
     } else {
       totalBlock.style.display = 'none';
@@ -88,7 +140,14 @@
     if (dish) {
       line.textContent = `${dish.name} — ${dish.price}₽`;
     } else {
-      line.textContent = cat === 'beverages' ? 'Напиток не выбран' : 'Блюдо не выбрано';
+      const defaults = {
+        soup: 'Суп не выбран',
+        main_course: 'Главное блюдо не выбрано',
+        beverages: 'Напиток не выбран',
+        starters: 'Стартер не выбран',
+        desserts: 'Десерт не выбран',
+      };
+      line.textContent = defaults[cat] || 'Не выбрано';
     }
   }
 
@@ -106,9 +165,11 @@
     });
   }
 
+  // === Инициализация ===
   function init() {
     if (!window.DISHES) return;
-    renderMenu();
+    renderFilters();
+    renderAllMenus();
     handleGlobalClicks();
     updateSummaryVisibility();
   }
@@ -119,5 +180,3 @@
     init();
   }
 })();
-
-
