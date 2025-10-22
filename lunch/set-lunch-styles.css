@@ -16,12 +16,135 @@ main h2 {
     color: #000;
 }
 
+/* Стили для комбо-сетки */
+.combo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  align-items: start;
+  margin: 20px 0 40px;
+}
+
+/* Каждое отдельное комбо */
+.combo-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 15px;
+  background: white;
+  border-radius: 15px;
+}
+
+/* Флекс-контейнер для блюд внутри комбо */
+.combo-dishes {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+}
+
+/* Блок одного блюда (иконка + подпись) */
+.dish-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  transition: transform 0.2s ease;
+}
+
+.dish-item:hover {
+  transform: translateY(-8px) scale(1.06);
+}
+
+/* Иконка блюда */
+.dish-icon {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  transition: transform 0.2s ease;
+}
+
+/* Подпись под иконкой */
+.dish-label {
+  font-size: 0.9rem;
+  color: #333;
+  text-align: center;
+  margin-top: 5px;
+  font-weight: 500;
+}
+
+/* Для десерта — отдельная подпись */
+.combo-item[data-combo-id="desert"] .dish-label {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: #666;
+  margin-top: 2px;
+}
+
+.combo-item[data-combo-id="desert"] .dish-item {
+  gap: 2px;
+}
+
+/* "Можно добавить к любому заказу" под десертом */
+.combo-item[data-combo-id="desert"]::after {
+  content: "(Можно добавить к любому заказу)";
+  display: block;
+  font-size: 0.75rem;
+  color: #888;
+  margin-top: 5px;
+  font-style: italic;
+}
+
 /* Сетка блюд */
 .menu-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
     margin-bottom: 40px;
+}
+
+/* Сетка комбо: 3 колонки */
+.combo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+    align-items: start;
+    margin: 20px 0 40px;
+}
+
+.combo-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.combo-thumb img {
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+    transition: transform 220ms ease;
+}
+
+.combo-name {
+    margin-top: 8px;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.combo-item:hover .combo-thumb img,
+.combo-item:focus .combo-thumb img {
+    transform: translateY(-8px) scale(1.06);
+}
+
+.combo-item:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
 }
 
 /* Фильтры */
@@ -117,51 +240,6 @@ main h2 {
 
 .add-btn:hover {
     background-color: #dadada;
-}
-
-
-/* Адаптивность */
-
-/* До 800px — 2 колонки */
-@media (max-width: 800px) {
-    .menu-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-/* До 600px — 1 колонка */
-@media (max-width: 600px) {
-    .menu-grid {
-        grid-template-columns: 1fr;
-        max-width: 400px; /* Ограничиваем ширину сетки карточек */
-        margin: 0 auto 40px; /* Центрируем сетку */
-    }
-    
-    /* Уменьшаем карточки, сохраняя пропорции */
-    .menu-item {
-        padding: 15px 20px; /* Уменьшаем внутренние отступы для лучшего соотношения с квадратными изображениями */
-    }
-    
-    /* Изображения остаются квадратными благодаря aspect-ratio */
-    
-    .menu-info .price {
-        font-size: 1.3rem; /* Немного уменьшаем размер цены */
-    }
-    
-    .menu-info .name {
-        font-size: 1.1rem; /* Немного уменьшаем размер названия */
-    }
-    
-    .add-btn {
-        padding: 8px 25px; /* Уменьшаем размер кнопки */
-        font-size: 0.9rem;
-    }
-    
-    /* Заголовок раздела - выравнивание по центру */
-    main h2 {
-        text-align: center;
-        font-size: 1.3rem; /* Немного уменьшаем размер заголовков разделов */
-    }
 }
 
 /* Стили для формы заказа */
@@ -334,6 +412,77 @@ main h2 {
     box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
 }
 
+/* Адаптивность */
+@media (max-width: 480px) {
+    .form-group input[type="text"],
+    .form-group input[type="email"],
+    .form-group input[type="tel"],
+    .form-group input[type="time"],
+    .form-group select,
+    .form-group textarea {
+        padding: 10px 12px;
+        font-size: 0.9rem;
+    }
+}
+
+
+@media (max-width: 600px) {
+    /* Блюда */
+        .dish-icon {
+        width: 40px;
+        height: 40px;
+    }
+    .dish-label {
+        font-size: 0.8rem;
+    }
+
+    /* Комбо */
+    .combo-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    /* Меню */
+    .menu-grid {
+        grid-template-columns: 1fr;
+        max-width: 400px; /* Ограничиваем ширину сетки карточек */
+        margin: 0 auto 40px; /* Центрируем сетку */
+    }
+    
+    .menu-item {
+        padding: 15px 20px; /* Уменьшаем внутренние отступы для лучшего соотношения с квадратными изображениями */
+    }
+    .menu-info .price {
+        font-size: 1.3rem; /* Немного уменьшаем размер цены */
+    }
+    
+    .menu-info .name {
+        font-size: 1.1rem; /* Немного уменьшаем размер названия */
+    }
+    
+    .add-btn {
+        padding: 8px 25px; /* Уменьшаем размер кнопки */
+        font-size: 0.9rem;
+    }
+    
+    /* Заголовок раздела - выравнивание по центру */
+    main h2 {
+        text-align: center;
+        font-size: 1.3rem; /* Немного уменьшаем размер заголовков разделов */
+    }
+}
+
+
+@media (max-width: 800px) {
+    .menu-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .combo-grid {
+        grid-template-columns: repeat(1, 1fr);
+    }
+}
+
 /* Адаптивность для формы */
 @media (max-width: 768px) {
     .form-container {
@@ -355,17 +504,5 @@ main h2 {
     
     .submit-btn {
         max-width: none;
-    }
-}
-
-@media (max-width: 480px) {
-    .form-group input[type="text"],
-    .form-group input[type="email"],
-    .form-group input[type="tel"],
-    .form-group input[type="time"],
-    .form-group select,
-    .form-group textarea {
-        padding: 10px 12px;
-        font-size: 0.9rem;
     }
 }

@@ -78,10 +78,10 @@
   }
 
   function renderCategory(category) {
-    const config = FILTERS_DATA[category];
-    if (!config) return;
+    const filter = FILTERS_DATA[category];
+    if (!filter) return;
 
-    const grid = document.getElementById(config.gridId);
+    const grid = document.getElementById(filter.gridId);
     if (!grid) return;
 
     const allDishes = DISHES.filter((d) => d.category === category);
@@ -102,7 +102,72 @@
     Object.keys(FILTERS_DATA).forEach(renderCategory);
   }
 
-  // === Логика выбора блюд (сохраняется) ===
+  // Рендер списка комбо
+function renderCombos() {
+  if (!window.COMBOS) return;
+  const container = document.getElementById('combos-grid');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  window.COMBOS.forEach((combo) => {
+    const item = document.createElement('div');
+    item.className = 'combo-item';
+    item.setAttribute('data-combo-id', combo.id || '');
+
+    // Создаем флекс-контейнер для блюд (направление сверху вниз)
+    const dishesContainer = document.createElement('div');
+    dishesContainer.className = 'combo-dishes';
+
+    // Для каждого типа блюда в items добавляем блок с иконкой и подписью
+    combo.items.forEach((itemType) => {
+      let iconPath = '';
+      let label = '';
+
+      switch (itemType) {
+        case 'soup':
+          iconPath = 'icons/soup.png';
+          label = 'Суп';
+          break;
+        case 'main':
+          iconPath = 'icons/main.png';
+          label = 'Главное блюдо';
+          break;
+        case 'salad':
+          iconPath = 'icons/salad.png';
+          label = 'Салат';
+          break;
+        case 'drink':
+          iconPath = 'icons/drink.png';
+          label = 'Напиток';
+          break;
+        case 'desert':
+          iconPath = 'icons/desert.png';
+          label = 'Десерт';
+          break;
+        default:
+          return;
+      }
+
+      const dishItem = document.createElement('div');
+      dishItem.className = 'dish-item';
+
+      dishItem.innerHTML = `
+        <img src="${iconPath}" alt="${label}" class="dish-icon">
+        <span class="dish-label">${label}</span>
+      `;
+
+      dishesContainer.appendChild(dishItem);
+    });
+
+    // Добавляем контейнер с блюдами в блок комбо
+    item.appendChild(dishesContainer);
+
+    container.appendChild(item);
+  });
+}
+
+  // === Логика выбора блюд ===
   const selected = {
     soup: null,
     main_course: null,
@@ -170,6 +235,7 @@
     if (!window.DISHES) return;
     renderFilters();
     renderAllMenus();
+    renderCombos();
     handleGlobalClicks();
     updateSummaryVisibility();
   }
