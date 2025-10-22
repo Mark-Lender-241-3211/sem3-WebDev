@@ -7,7 +7,6 @@
     desserts: 'Десерт',
   };
 
-  // Глобальное состояние фильтров
   const activeFilters = {
     soup: null,
     main_course: null,
@@ -15,6 +14,45 @@
     starters: null,
     desserts: null,
   };
+
+  // === ЗАГРУЗКА БЛЮД С API ===
+  async function loadDishes() {
+    try {
+      const response = await fetch('https://edu.std-900.ist.mospolytech.ru/labs/api/dishes');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const rawData = await response.json();
+
+      // Маппинг категорий из API в ожидаемые фронтендом
+      const categoryMap = {
+        'soup': 'soup',
+        'main-course': 'main_course',
+        'salad': 'starters',
+        'drink': 'beverages',
+        'dessert': 'desserts',
+      };
+
+      const dishes = rawData.map(dish => {
+        const cleanImage = dish.image.trim(); // убираем пробелы в конце
+        const frontendCategory = categoryMap[dish.category] || dish.category;
+
+        return {
+          ...dish,
+          category: frontendCategory,
+          image: cleanImage,
+        };
+      });
+
+      window.DISHES = dishes;
+      return dishes;
+    } catch (error) {
+      console.error('Ошибка при загрузке блюд:', error);
+      alert('Не удалось загрузить меню. Проверьте подключение к интернету.');
+      window.DISHES = [];
+      return [];
+    }
+  }
 
   function sortDishesAlphabetically(dishes) {
     return [...dishes].sort((a, b) => a.name.localeCompare(b.name, 'ru'));
@@ -26,7 +64,7 @@
     item.setAttribute('data-dish', dish.keyword);
     item.setAttribute('data-kind', dish.kind);
     item.innerHTML = `
-      <img src="menu/${dish.image}.jpg" alt="${dish.name}">
+      <img src="${dish.image}" alt="${dish.name}">
       <div class="menu-info">
         <p class="price">${dish.price}₽</p>
         <p class="name">${dish.name}</p>
@@ -60,16 +98,13 @@
     const kind = btn.dataset.kind;
     const isActive = btn.classList.contains('active');
 
-    // Сброс активного состояния у всех кнопок в категории
     document.querySelectorAll(`[data-category="${category}"]`).forEach((b) => {
       b.classList.remove('active');
     });
 
     if (isActive) {
-      // Сброс фильтра
       activeFilters[category] = null;
     } else {
-      // Установка нового фильтра
       activeFilters[category] = kind;
       btn.classList.add('active');
     }
@@ -102,72 +137,66 @@
     Object.keys(FILTERS_DATA).forEach(renderCategory);
   }
 
-  // Рендер списка комбо
-function renderCombos() {
-  if (!window.COMBOS) return;
-  const container = document.getElementById('combos-grid');
-  if (!container) return;
+  function renderCombos() {
+    if (!window.COMBOS) return;
+    const container = document.getElementById('combos-grid');
+    if (!container) return;
 
-  container.innerHTML = '';
+    container.innerHTML = '';
 
-  window.COMBOS.forEach((combo) => {
-    const item = document.createElement('div');
-    item.className = 'combo-item';
-    item.setAttribute('data-combo-id', combo.id || '');
+    window.COMBOS.forEach((combo) => {
+      const item = document.createElement('div');
+      item.className = 'combo-item';
+      item.setAttribute('data-combo-id', combo.id || '');
 
-    // Создаем флекс-контейнер для блюд (направление сверху вниз)
-    const dishesContainer = document.createElement('div');
-    dishesContainer.className = 'combo-dishes';
+      const dishesContainer = document.createElement('div');
+      dishesContainer.className = 'combo-dishes';
 
-    // Для каждого типа блюда в items добавляем блок с иконкой и подписью
-    combo.items.forEach((itemType) => {
-      let iconPath = '';
-      let label = '';
+      combo.items.forEach((itemType) => {
+        let iconPath = '';
+        let label = '';
 
-      switch (itemType) {
-        case 'soup':
-          iconPath = 'icons/soup.png';
-          label = 'Суп';
-          break;
-        case 'main':
-          iconPath = 'icons/main.png';
-          label = 'Главное блюдо';
-          break;
-        case 'salad':
-          iconPath = 'icons/salad.png';
-          label = 'Салат';
-          break;
-        case 'drink':
-          iconPath = 'icons/drink.png';
-          label = 'Напиток';
-          break;
-        case 'desert':
-          iconPath = 'icons/desert.png';
-          label = 'Десерт';
-          break;
-        default:
-          return;
-      }
+        switch (itemType) {
+          case 'soup':
+            iconPath = 'icons/soup.png';
+            label = 'Суп';
+            break;
+          case 'main':
+            iconPath = 'icons/main.png';
+            label = 'Главное блюдо';
+            break;
+          case 'salad':
+            iconPath = 'icons/salad.png';
+            label = 'Салат';
+            break;
+          case 'drink':
+            iconPath = 'icons/drink.png';
+            label = 'Напиток';
+            break;
+          case 'desert':
+            iconPath = 'icons/desert.png';
+            label = 'Десерт';
+            break;
+          default:
+            return;
+        }
 
-      const dishItem = document.createElement('div');
-      dishItem.className = 'dish-item';
+        const dishItem = document.createElement('div');
+        dishItem.className = 'dish-item';
 
-      dishItem.innerHTML = `
-        <img src="${iconPath}" alt="${label}" class="dish-icon">
-        <span class="dish-label">${label}</span>
-      `;
+        dishItem.innerHTML = `
+          <img src="${iconPath}" alt="${label}" class="dish-icon">
+          <span class="dish-label">${label}</span>
+        `;
 
-      dishesContainer.appendChild(dishItem);
+        dishesContainer.appendChild(dishItem);
+      });
+
+      item.appendChild(dishesContainer);
+      container.appendChild(item);
     });
+  }
 
-    // Добавляем контейнер с блюдами в блок комбо
-    item.appendChild(dishesContainer);
-
-    container.appendChild(item);
-  });
-}
-
-  // === Логика выбора блюд ===
   const selected = {
     soup: null,
     main_course: null,
@@ -230,9 +259,11 @@ function renderCombos() {
     });
   }
 
-  // === Инициализация ===
-  function init() {
-    if (!window.DISHES) return;
+  // === ИНИЦИАЛИЗАЦИЯ ===
+  async function init() {
+    await loadDishes();
+    if (!window.DISHES || window.DISHES.length === 0) return;
+
     renderFilters();
     renderAllMenus();
     renderCombos();
