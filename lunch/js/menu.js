@@ -259,6 +259,96 @@
     });
   }
 
+  // === МОДАЛЬНОЕ УВЕДОМЛЕНИЕ ===
+  function showModal(message) {
+    const existing = document.querySelector('.modal-overlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+
+    const content = document.createElement('div');
+    content.className = 'modal-content';
+
+    content.innerHTML = `
+      <h3 class="modal-title">${message}</h3>
+      <button class="modal-btn">Окей 👌</button>
+    `;
+
+    overlay.appendChild(content);
+    document.body.appendChild(overlay);
+
+    const btn = content.querySelector('.modal-btn');
+    btn.addEventListener('click', () => {
+      overlay.remove();
+    });
+  }
+
+  // === ВАЛИДАЦИЯ ПЕРЕД ОТПРАВКОЙ ===
+  function setupFormValidation() {
+    const form = document.getElementById('orderForm');
+    if (!form) return;
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const selectedCategories = Object.keys(selected).filter(cat => selected[cat]);
+
+      if (selectedCategories.length === 0) {
+        showModal('Ничего не выбрано. Выберите блюда для заказа');
+        return;
+      }
+
+      // Преобразуем выбранные категории в типы для сравнения с COMBOS
+      const selectedTypes = [];
+      for (const cat in selected) {
+        if (selected[cat]) {
+          let type = '';
+          switch (cat) {
+            case 'soup': type = 'soup'; break;
+            case 'main_course': type = 'main'; break;
+            case 'starters': type = 'salad'; break;
+            case 'beverages': type = 'drink'; break;
+            case 'desserts': type = 'desert'; break;
+          }
+          selectedTypes.push(type);
+        }
+      }
+
+      // Проверяем соответствие хотя бы одному комбо
+      const isValidCombo = window.COMBOS.some(combo => {
+        return combo.items.every(item => selectedTypes.includes(item));
+      });
+
+      if (!isValidCombo) {
+        const hasSoup = selected.soup;
+        const hasMain = selected.main_course;
+        const hasSalad = selected.starters;
+        const hasDrink = selected.beverages;
+
+        let message = '';
+
+        if ((hasSoup || hasMain || hasSalad) && !hasDrink) {
+          message = 'Выберите напиток';
+        } else if (hasSoup && !(hasMain || hasSalad)) {
+          message = 'Выберите главное блюдо или салат';
+        } else if (hasSalad && !(hasSoup || hasMain)) {
+          message = 'Выберите суп или главное блюдо';
+        } else if (hasMain && !(hasSoup || hasSalad)) {
+          message = 'Выберите салат или суп';
+        } else {
+          message = 'Выберите блюда, соответствующие одному из комбо';
+        }
+
+        showModal(message);
+        return;
+      }
+
+      // Если всё ок — отправляем форму
+      this.submit();
+    });
+  }
+
   // === ИНИЦИАЛИЗАЦИЯ ===
   async function init() {
     await loadDishes();
@@ -269,6 +359,7 @@
     renderCombos();
     handleGlobalClicks();
     updateSummaryVisibility();
+    setupFormValidation(); // ← подключаем валидацию
   }
 
   if (document.readyState === 'loading') {
