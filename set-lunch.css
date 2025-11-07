@@ -487,7 +487,7 @@ main h2 {
 
 @media (max-width: 600px) {
     /* Блюда */
-        .dish-icon {
+    .dish-icon {
         width: 40px;
         height: 40px;
     }
@@ -563,5 +563,88 @@ main h2 {
     
     .submit-btn {
         max-width: none;
+    }
+}
+
+/* Панель перехода к оформлению заказа */
+.order-panel {
+    position: sticky;
+    bottom: 20px;
+    z-index: 100;
+    margin-top: 40px;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.order-panel-content {
+    background: white;
+    border-radius: 15px;
+    padding: 20px 30px;
+    box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.15);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.order-panel-total {
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.order-panel-total strong {
+    font-size: 1.5rem;
+    color: #4CAF50;
+    margin-left: 10px;
+}
+
+.go-to-order-btn {
+    padding: 15px 40px;
+    background-color: #4CAF50;
+    color: white;
+    text-decoration: none;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    display: inline-block;
+}
+
+.go-to-order-btn:hover:not(.disabled) {
+    background-color: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+}
+
+.go-to-order-btn.disabled {
+    background-color: #ccc;
+    color: #666;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Стиль для выбранного блюда */
+.menu-item.selected {
+    border: 3px solid #4CAF50;
+    box-shadow: 0px 10px 25px rgba(76, 175, 80, 0.3);
+}
+
+/* Адаптивность для панели */
+@media (max-width: 768px) {
+    .order-panel-content {
+        flex-direction: column;
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .order-panel-total {
+        margin-bottom: 10px;
+    }
+    
+    .go-to-order-btn {
+        width: 100%;
+        text-align: center;
     }
 }

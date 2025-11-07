@@ -129,6 +129,10 @@
     grid.innerHTML = '';
     sortDishesAlphabetically(dishesToShow).forEach((dish) => {
       const card = buildCard(dish);
+      // Выделяем блюдо, если оно уже выбрано
+      if (selected[category] && selected[category].keyword === dish.keyword) {
+        highlightSelectedDish(card, true);
+      }
       grid.appendChild(card);
     });
   }
@@ -248,7 +252,9 @@
     const nothing = document.getElementById('nothing-selected');
     const totalBlock = document.getElementById('order-total');
 
-    nothing.style.display = hasAny ? 'none' : 'block';
+    if (nothing) {
+      nothing.style.display = hasAny ? 'none' : 'block';
+    }
 
     Object.keys(selected).forEach((cat) => {
       const holder = document.querySelector(`#selectedSummary [data-cat="${cat}"]`);
@@ -258,12 +264,20 @@
     });
 
     const total = Object.values(selected).reduce((sum, d) => sum + (d ? d.price : 0), 0);
-    if (hasAny) {
-      totalBlock.style.display = 'block';
-      document.getElementById('orderTotalValue').textContent = String(total);
-    } else {
-      totalBlock.style.display = 'none';
+    if (totalBlock) {
+      if (hasAny) {
+        totalBlock.style.display = 'block';
+        const totalValueEl = document.getElementById('orderTotalValue');
+        if (totalValueEl) {
+          totalValueEl.textContent = String(total);
+        }
+      } else {
+        totalBlock.style.display = 'none';
+      }
     }
+    
+    // Обновляем панель перехода к оформлению
+    updateOrderPanel();
   }
 
   function writeSummary(cat, dish) {
@@ -287,13 +301,50 @@
     document.addEventListener('click', (e) => {
       const card = e.target.closest('.menu-item');
       if (!card) return;
+      const btn = e.target.closest('.add-btn');
+      if (!btn) return;
+      
       const keyword = card.getAttribute('data-dish');
       const dish = DISHES.find((d) => d.keyword === keyword);
       if (!dish) return;
 
-      selected[dish.category] = dish;
-      writeSummary(dish.category, dish);
-      updateSummaryVisibility();
+      // Снимаем выделение с других блюд в той же категории
+      const category = dish.category;
+      document.querySelectorAll(`.menu-item[data-dish]`).forEach(c => {
+        const cat = DISHES.find(d => d.keyword === c.getAttribute('data-dish'))?.category;
+        if (cat === category) {
+          highlightSelectedDish(c, false);
+        }
+      });
+
+      selected[category] = dish;
+      saveSelectionToLS(); // Сохраняем в localStorage
+      writeSummary(category, dish);
+      updateSummaryVisibility(); // Это также обновит панель
+      highlightSelectedDish(card, true); // Выделяем выбранное блюдо
+    });
+  }
+
+  // Выделение выбранного блюда визуально
+  function highlightSelectedDish(cardElement, isSelected) {
+    if (isSelected) {
+      cardElement.classList.add('selected');
+    } else {
+      cardElement.classList.remove('selected');
+    }
+  }
+
+  // Обновление визуального выделения всех блюд при рендеринге
+  function updateDishSelection() {
+    if (!window.DISHES) return;
+    
+    Object.keys(selected).forEach(cat => {
+      if (selected[cat]) {
+        const card = document.querySelector(`[data-dish="${selected[cat].keyword}"]`);
+        if (card) {
+          highlightSelectedDish(card, true);
+        }
+      }
     });
   }
 
@@ -322,69 +373,64 @@
     });
   }
 
-  // === ВАЛИДАЦИЯ ПЕРЕД ОТПРАВКОЙ ===
-  function setupFormValidation() {
-    const form = document.getElementById('orderForm');
-    if (!form) return;
-
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-
-      const selectedCategories = Object.keys(selected).filter(cat => selected[cat]);
-
-      if (selectedCategories.length === 0) {
-        showModal('Ничего не выбрано. Выберите блюда для заказа');
-        return;
-      }
-
-      // Преобразуем выбранные категории в типы для сравнения с COMBOS
-      const selectedTypes = [];
-      for (const cat in selected) {
-        if (selected[cat]) {
-          let type = '';
-          switch (cat) {
-            case 'soup': type = 'soup'; break;
-            case 'main_course': type = 'main'; break;
-            case 'starters': type = 'salad'; break;
-            case 'beverages': type = 'drink'; break;
-            case 'desserts': type = 'desert'; break;
-          }
-          selectedTypes.push(type);
+  // === ПРОВЕРКА ВАЛИДНОСТИ КОМБО ===
+  function isValidCombo() {
+    const selectedTypes = [];
+    for (const cat in selected) {
+      if (selected[cat]) {
+        let type = '';
+        switch (cat) {
+          case 'soup': type = 'soup'; break;
+          case 'main_course': type = 'main'; break;
+          case 'starters': type = 'salad'; break;
+          case 'beverages': type = 'drink'; break;
+          case 'desserts': type = 'desert'; break;
         }
+        selectedTypes.push(type);
       }
+    }
 
-      // Проверяем соответствие хотя бы одному комбо
-      const isValidCombo = window.COMBOS.some(combo => {
-        return combo.items.every(item => selectedTypes.includes(item));
-      });
+    if (selectedTypes.length === 0) return false;
 
-      if (!isValidCombo) {
-        const hasSoup = selected.soup;
-        const hasMain = selected.main_course;
-        const hasSalad = selected.starters;
-        const hasDrink = selected.beverages;
-
-        let message = '';
-
-        if ((hasSoup || hasMain || hasSalad) && !hasDrink) {
-          message = 'Выберите напиток';
-        } else if (hasSoup && !(hasMain || hasSalad)) {
-          message = 'Выберите главное блюдо или салат';
-        } else if (hasSalad && !(hasSoup || hasMain)) {
-          message = 'Выберите суп или главное блюдо';
-        } else if (hasMain && !(hasSoup || hasSalad)) {
-          message = 'Выберите салат или суп';
-        } else {
-          message = 'Выберите блюда, соответствующие одному из комбо';
-        }
-
-        showModal(message);
-        return;
-      }
-
-      // Если всё ок — отправляем форму
-      this.submit();
+    // Проверяем соответствие хотя бы одному комбо
+    return window.COMBOS.some(combo => {
+      return combo.items.every(item => selectedTypes.includes(item));
     });
+  }
+
+  // === ПАНЕЛЬ ПЕРЕХОДА К ОФОРМЛЕНИЮ ===
+  function updateOrderPanel() {
+    const panel = document.getElementById('order-panel');
+    if (!panel) return;
+
+    const hasAny = Object.values(selected).some(Boolean);
+    const total = Object.values(selected).reduce((sum, d) => sum + (d ? d.price : 0), 0);
+    const isValid = isValidCombo();
+    const link = panel.querySelector('#go-to-order-link');
+    const totalEl = panel.querySelector('#order-panel-total');
+
+    // Скрываем панель, если ничего не выбрано
+    panel.style.display = hasAny ? 'block' : 'none';
+
+    if (totalEl) {
+      totalEl.textContent = `${total}₽`;
+    }
+
+    // Делаем ссылку активной только если комбо валидно
+    if (link) {
+      if (isValid) {
+        link.classList.remove('disabled');
+        link.href = 'order.html';
+        link.onclick = null; // Убираем обработчик при валидном комбо
+      } else {
+        link.classList.add('disabled');
+        link.href = '#';
+        link.onclick = (e) => {
+          e.preventDefault();
+          showModal('Выберите блюда, соответствующие одному из доступных комбо');
+        };
+      }
+    }
   }
 
   // === ИНИЦИАЛИЗАЦИЯ ===
@@ -392,12 +438,15 @@
     await loadDishes();
     if (!window.DISHES || window.DISHES.length === 0) return;
 
+    // Загружаем сохраненные выборы из localStorage
+    loadSelectionFromLS();
+
     renderFilters();
     renderAllMenus();
     renderCombos();
     handleGlobalClicks();
-    updateSummaryVisibility();
-    setupFormValidation(); // ← подключаем валидацию
+    updateSummaryVisibility(); // Это также обновит панель
+    updateDishSelection(); // Выделяем сохраненные блюда
   }
 
   if (document.readyState === 'loading') {

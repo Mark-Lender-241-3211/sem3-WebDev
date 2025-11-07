@@ -21,7 +21,8 @@
             <ul>
                 <li><a href="index.html">О нас</a></li>
                 <li><a href="#set_lunch" class="active">Собрать ланч</a></li>
-                <li><a href="#order">Заказы</a></li>
+                <li><a href="order.html">Оформить заказ</a></li>
+                <li><a href="orders.html">История заказов</a></li>
                 <li><a href="#contacts">Контакты</a></li>
             </ul>
         </nav>
@@ -55,121 +56,16 @@
             <div class="menu-grid" id="dessertsGrid"></div>
         </section>
 
-        <!-- Форма заказа -->
-        <section id="order_form">
-            <h2>Сделать заказ</h2>
-            <form action="https://httpbin.org/post" method="post" id="orderForm">
-                <div class="form-container">
-                    <!-- Блок с заказом клиента -->
-                    <div class="order-block">
-                        <h3>Ваш заказ</h3>
-                        <div id="selectedSummary" class="order-summary">
-                            <div class="form-group" data-cat="soup" style="display:none">
-                                <label>Суп:</label>
-                                <div class="summary-line" id="summary-soup">Блюдо не выбрано</div>
-                            </div>
-                            <div class="form-group" data-cat="main_course" style="display:none">
-                                <label>Главное блюдо:</label>
-                                <div class="summary-line" id="summary-main_course">Блюдо не выбрано</div>
-                            </div>
-                            <div class="form-group" data-cat="beverages" style="display:none">
-                                <label>Напиток:</label>
-                                <div class="summary-line" id="summary-beverages">Напиток не выбран</div>
-                            </div>
-                            <div class="form-group" data-cat="starters" style="display:none">
-                                <label>Салат:</label>
-                                <div class="summary-line" id="summary-starters">Блюдо не выбрано</div>
-                            </div>
-                            <div class="form-group" data-cat="desserts" style="display:none">
-                                <label>Десерт:</label>
-                                <div class="summary-line" id="summary-desserts">Блюдо не выбрано</div>
-                            </div>
-                            <div class="form-group" id="order-total" style="display:none">
-                                <label>Стоимость заказа:</label>
-                                <div class="summary-line"><span id="orderTotalValue">0</span>₽</div>
-                            </div>
-                            <div class="form-group" id="nothing-selected">
-                                <div class="summary-line">Ничего не выбрано</div>
-                            </div>
-                        </div>
-
-                        <!-- Комментарии к заказу -->
-                        <div class="form-group">
-                            <label for="comments">Комментарии к заказу:</label>
-                            <textarea id="comments" name="comments" rows="4" cols="50" maxlength="500" placeholder="Дополнительные пожелания к заказу (максимум 500 символов)"></textarea>
-                            <div class="char-counter">
-                                <span id="charCount">0</span>/500 символов
-                            </div>
-                        </div>
-                        </template>
-                    </div>
-
-                    <!-- Блок с данными клиента -->
-                    <div class="client-data-block">
-                        <h3>Ваши данные</h3>
-                        
-                        <!-- Имя -->
-                        <div class="form-group">
-                            <label for="name">Имя:</label>
-                            <input type="text" id="name" name="name" required>
-                        </div>
-
-                        <!-- Email -->
-                        <div class="form-group">
-                            <label for="email">Email:</label>
-                            <input type="email" id="email" name="email" required>
-                        </div>
-
-                        <!-- Чекбокс для рассылки -->
-                        <div class="form-group checkbox-group">
-                            <input type="checkbox" id="newsletter" name="newsletter" value="yes" checked>
-                            <label for="newsletter">Получать информацию о скидках и акциях</label>
-                        </div>
-
-                        <!-- Телефон -->
-                        <div class="form-group">
-                            <label for="phone">Номер телефона:</label>
-                            <input type="tel" id="phone" name="phone" required>
-                        </div>
-
-                        <!-- Адрес доставки -->
-                        <div class="form-group">
-                            <label for="address">Адрес доставки:</label>
-                            <input type="text" id="address" name="address" required>
-                            <small class="delivery-info">Доставка осуществляется только по Москве</small>
-                        </div>
-
-                        <!-- Время доставки -->
-                        <div class="form-group">
-                            <label>Время доставки:</label>
-                            <div class="radio-group">
-                                <div class="radio-item">
-                                    <input type="radio" id="delivery_asap" name="delivery_time" value="asap" required>
-                                    <label for="delivery_asap">Как можно скорее</label>
-                                </div>
-                                <div class="radio-item">
-                                    <input type="radio" id="delivery_scheduled" name="delivery_time" value="scheduled" required>
-                                    <label for="delivery_scheduled">К указанному времени</label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Указание времени доставки -->
-                        <div class="form-group">
-                            <label for="delivery_time_input">Укажите время доставки:</label>
-                            <input type="time" id="delivery_time_input" name="delivery_time_input" min="07:00" max="23:00" step="300">
-                            <small class="delivery-info">Доступное время доставки с 7:00 до 23:00</small>
-                        </div>
-                    </div>
+        <!-- Панель перехода к оформлению заказа -->
+        <div id="order-panel" class="order-panel" style="display: none;">
+            <div class="order-panel-content">
+                <div class="order-panel-total">
+                    <span>Стоимость заказа: </span>
+                    <strong id="order-panel-total">0₽</strong>
                 </div>
-
-                <!-- Кнопки формы -->
-                <div class="form-buttons">
-                    <button type="reset" class="reset-btn">Сбросить</button>
-                    <button type="submit" class="submit-btn">Отправить</button>
+                <a href="order.html" id="go-to-order-link" class="go-to-order-btn">Перейти к оформлению</a>
+            </div>
                 </div>
-            </form>
-        </section>
     </main>
 
     <footer>

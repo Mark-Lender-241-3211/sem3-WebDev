@@ -1,4 +1,7 @@
 (function () {
+  const CONFIG = window.FC_CONFIG || {};
+  const STUDENT_ID = typeof CONFIG.studentId === 'string' ? CONFIG.studentId.trim() : '';
+
   const LS_SELECTION = 'fc_order_selection'; // ключ с выбранными блюдами (keyword'ы)
   const LS_FORM      = 'fc_order_form';      // ключ с данными формы
 
@@ -254,7 +257,14 @@
       };
 
       try {
-        const res = await fetch('/api/orders', {
+        const url = new URL('https://edu.std-900.ist.mospolytech.ru/labs/api/orders');
+        if (STUDENT_ID) {
+          url.searchParams.set('student_id', STUDENT_ID);
+        } else {
+          console.warn('studentId не задан в FC_CONFIG. Заказ будет создан в общей области API.');
+        }
+
+        const res = await fetch(url.toString(), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -265,7 +275,7 @@
         localStorage.removeItem(LS_SELECTION);
         clearForm();
         showModal('Заказ успешно оформлен! Спасибо 🧡');
-        setTimeout(() => location.href = '/index.html', 1200);
+        setTimeout(() => location.href = 'index.html', 1200);
       } catch (err) {
         console.error(err);
         showModal('Не удалось оформить заказ. Попробуйте ещё раз позже.');
