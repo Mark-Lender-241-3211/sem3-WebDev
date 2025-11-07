@@ -158,23 +158,23 @@
 
         switch (itemType) {
           case 'soup':
-            iconPath = 'icons/soup.png';
+            iconPath = 'images/icons/soup.png';
             label = 'Суп';
             break;
           case 'main':
-            iconPath = 'icons/main.png';
+            iconPath = 'images/icons/main.png';
             label = 'Главное блюдо';
             break;
           case 'salad':
-            iconPath = 'icons/salad.png';
+            iconPath = 'images/icons/salad.png';
             label = 'Салат';
             break;
           case 'drink':
-            iconPath = 'icons/drink.png';
+            iconPath = 'images/icons/drink.png';
             label = 'Напиток';
             break;
           case 'desert':
-            iconPath = 'icons/desert.png';
+            iconPath = 'images/icons/desert.png';
             label = 'Десерт';
             break;
           default:

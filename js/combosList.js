@@ -1,8 +1,3 @@
-<<<<<<< HEAD:lunch/js/combosList.js
-=======
-
->>>>>>> 860d966 (Реорганизовал файлы):js/combosList.js
-// Data for combos (варианты ланча)
 const COMBOS = [
   {
     id: 'combo-1',
@@ -31,8 +26,5 @@ const COMBOS = [
   }
 ];
  
-<<<<<<< HEAD:lunch/js/combosList.js
 window.COMBOS = COMBOS;
-=======
-window.COMBOS = COMBOS;
->>>>>>> 860d966 (Реорганизовал файлы):js/combosList.js
+
