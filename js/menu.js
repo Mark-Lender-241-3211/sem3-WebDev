@@ -197,6 +197,8 @@
     });
   }
 
+  const LS_SELECTION = 'fc_order_selection'; // ключ для сохранения выбранных блюд
+
   const selected = {
     soup: null,
     main_course: null,
@@ -204,6 +206,42 @@
     starters: null,
     desserts: null,
   };
+
+  // === РАБОТА С LOCALSTORAGE ===
+  function saveSelectionToLS() {
+    // Сохраняем только keyword'ы выбранных блюд
+    const selection = {};
+    Object.keys(selected).forEach(cat => {
+      if (selected[cat]) {
+        selection[cat] = selected[cat].keyword;
+      }
+    });
+    try {
+      localStorage.setItem(LS_SELECTION, JSON.stringify(selection));
+    } catch (e) {
+      console.error('Ошибка при сохранении в localStorage:', e);
+    }
+  }
+
+  function loadSelectionFromLS() {
+    try {
+      const saved = localStorage.getItem(LS_SELECTION);
+      if (!saved) return;
+      const selection = JSON.parse(saved);
+      
+      // Загружаем keyword'ы и находим соответствующие блюда
+      Object.keys(selection).forEach(cat => {
+        if (selection[cat] && window.DISHES) {
+          const dish = window.DISHES.find(d => d.keyword === selection[cat] && d.category === cat);
+          if (dish) {
+            selected[cat] = dish;
+          }
+        }
+      });
+    } catch (e) {
+      console.error('Ошибка при загрузке из localStorage:', e);
+    }
+  }
 
   function updateSummaryVisibility() {
     const hasAny = Object.values(selected).some(Boolean);
