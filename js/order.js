@@ -6,18 +6,23 @@
   const LS_SELECTION = 'fc_order_selection'; // ключ с выбранными блюдами (keyword'ы)
   const LS_FORM      = 'fc_order_form';      // ключ с данными формы
 
-  // соответствие категорий типам комбо (как в твоём menu.js)
+  // соответствие категорий типам комбо
   const CAT2TYPE = { soup: 'soup', main_course: 'main', starters: 'salad', beverages: 'drink', desserts: 'desert' };
 
-  // ===== Загрузка блюд с API — как на set-lunch =====
-  async function ensureDishes() {
-    if (Array.isArray(window.DISHES) && window.DISHES.length) return;
+  // ===== ЗАГРУЗКА БЛЮД С API (исправлено: без пробелов в URL) =====
+  async function loadDishesForOrder() {
+    if (Array.isArray(window.DISHES) && window.DISHES.length > 0) {
+      return; // уже загружено — ничего не делаем
+    }
+
     try {
-      const res = await fetch('https://edu.std-900.ist.mospolytech.ru/labs/api/dishes', {
+      const response = await fetch('https://edu.std-900.ist.mospolytech.ru/labs/api/dishes', {
         headers: API_KEY ? { 'X-API-Key': API_KEY } : {}
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const raw = await res.json();
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const rawData = await response.json();
 
       const categoryMap = {
         'soup': 'soup',
@@ -27,15 +32,15 @@
         'dessert': 'desserts',
       };
 
-      window.DISHES = raw.map(d => ({
-        ...d,
-        category: categoryMap[d.category] || d.category,
-        image: d.image.trim(), // как в menu.js (в API картинка приходит уже с путём)
+      window.DISHES = rawData.map(dish => ({
+        ...dish,
+        category: categoryMap[dish.category] || dish.category,
+        image: dish.image.trim(),
       }));
     } catch (e) {
-      console.error(e);
+      console.error('Не удалось загрузить меню на странице заказа:', e);
       window.DISHES = [];
-      alert('Не удалось загрузить меню. Проверьте подключение к интернету.');
+      // Не показываем alert, чтобы не мешать пользователю
     }
   }
 
@@ -70,6 +75,7 @@
 
   function renderGrid() {
     const grid = document.getElementById('orderGrid');
+    if (!grid) return;
     grid.innerHTML = '';
 
     const sel = readSel();
@@ -79,6 +85,8 @@
 
   function updateCardsSummary() {
     const grid = document.getElementById('orderGrid');
+    if (!grid) return;
+
     const items = grid.querySelectorAll('.menu-item');
     const total = Array.from(items).reduce((sum, card) => {
       const p = card.querySelector('.price');
@@ -87,15 +95,22 @@
     }, 0);
 
     const hasAny = items.length > 0;
-    document.getElementById('empty-order').hidden = hasAny;
-    document.getElementById('order-total').hidden = !hasAny;
-    document.getElementById('orderTotalValue').textContent = String(total);
+    const emptyNote = document.getElementById('empty-order');
+    const totalBlock = document.getElementById('order-total');
+    const totalValue = document.getElementById('orderTotalValue');
+
+    if (emptyNote) emptyNote.hidden = hasAny;
+    if (totalBlock) totalBlock.hidden = !hasAny;
+    if (totalValue) totalValue.textContent = String(total);
 
     updateLeftFormSummary(); // всегда обновляем сводку формы
   }
 
   function bindDelete() {
-    document.getElementById('orderGrid').addEventListener('click', (e) => {
+    const grid = document.getElementById('orderGrid');
+    if (!grid) return;
+
+    grid.addEventListener('click', (e) => {
       const btn = e.target.closest('.remove-btn');
       if (!btn) return;
       const card = btn.closest('.menu-item');
@@ -143,7 +158,7 @@
     if (totalEl) totalEl.textContent = String(total);
   }
 
-  // ===== Модалка (точно как в set-lunch) =====
+  // ===== Модалка =====
   function showModal(message) {
     const prev = document.querySelector('.modal-overlay');
     if (prev) prev.remove();
@@ -161,7 +176,7 @@
     content.querySelector('.modal-btn').addEventListener('click', () => overlay.remove());
   }
 
-  // ===== Проверка комбо — «как было» =====
+  // ===== Проверка комбо =====
   function selectedTypes() {
     const sel = readSel();
     return Object.entries(sel)
@@ -217,6 +232,8 @@
 
   function bindFormPersistence() {
     const form = document.getElementById('orderForm');
+    if (!form) return;
+
     const toObj = () => ({
       name:    document.getElementById('name')?.value || '',
       phone:   document.getElementById('phone')?.value || '',
@@ -243,6 +260,8 @@
   // ===== Отправка формы =====
   function bindFormSubmit() {
     const form = document.getElementById('orderForm');
+    if (!form) return;
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -263,8 +282,6 @@
         const url = new URL('https://edu.std-900.ist.mospolytech.ru/labs/api/dishes');
         if (STUDENT_ID) {
           url.searchParams.set('student_id', STUDENT_ID);
-        } else {
-          console.warn('studentId не задан в FC_CONFIG. Заказ будет создан в общей области API.');
         }
 
         const headers = { 'Content-Type': 'application/json' };
@@ -293,7 +310,8 @@
 
   // ===== Инициализация =====
   async function init() {
-    await ensureDishes();
+    await loadDishesForOrder(); // ←←← КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: ждём загрузку блюд
+
     renderGrid();
     updateCardsSummary();
     bindDelete();
@@ -303,6 +321,9 @@
     bindFormSubmit();
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();

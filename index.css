@@ -45,14 +45,14 @@ header ul {
 
 
 /* Стили для ссылок */
-a {
+header a {
     color: white;
     text-decoration: none;
     font-family: 'Roboto', sans-serif;
     font-size: 1.25rem;
 }
 
-a:hover {
+header a:hover {
     color: #ccc; /* Изменение цвета при наведении */
 }
 
