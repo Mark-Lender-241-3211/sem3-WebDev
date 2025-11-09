@@ -1,6 +1,7 @@
 (function () {
   const CONFIG = window.FC_CONFIG || {};
   const STUDENT_ID = typeof CONFIG.studentId === 'string' ? CONFIG.studentId.trim() : '';
+  const API_KEY = typeof CONFIG.apiKey === 'string' ? CONFIG.apiKey.trim() : '';
 
   const LS_SELECTION = 'fc_order_selection'; // ключ с выбранными блюдами (keyword'ы)
   const LS_FORM      = 'fc_order_form';      // ключ с данными формы
@@ -12,7 +13,9 @@
   async function ensureDishes() {
     if (Array.isArray(window.DISHES) && window.DISHES.length) return;
     try {
-      const res = await fetch('https://edu.std-900.ist.mospolytech.ru/labs/api/dishes');
+      const res = await fetch('https://edu.std-900.ist.mospolytech.ru/labs/api/dishes', {
+        headers: API_KEY ? { 'X-API-Key': API_KEY } : {}
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const raw = await res.json();
 
@@ -257,16 +260,21 @@
       };
 
       try {
-        const url = new URL('https://edu.std-900.ist.mospolytech.ru/labs/api/orders');
+        const url = new URL('https://edu.std-900.ist.mospolytech.ru/labs/api/dishes');
         if (STUDENT_ID) {
           url.searchParams.set('student_id', STUDENT_ID);
         } else {
           console.warn('studentId не задан в FC_CONFIG. Заказ будет создан в общей области API.');
         }
 
+        const headers = { 'Content-Type': 'application/json' };
+        if (API_KEY) {
+          headers['X-API-Key'] = API_KEY;
+        }
+
         const res = await fetch(url.toString(), {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: headers,
           body: JSON.stringify(payload)
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);

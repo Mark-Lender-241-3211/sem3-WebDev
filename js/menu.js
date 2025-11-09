@@ -1,4 +1,7 @@
 (function () {
+  const CONFIG = window.FC_CONFIG || {};
+  const API_KEY = typeof CONFIG.apiKey === 'string' ? CONFIG.apiKey.trim() : '';
+
   const categoryLabels = {
     soup: 'Суп',
     main_course: 'Главное блюдо',
@@ -18,7 +21,9 @@
   // === ЗАГРУЗКА БЛЮД С API ===
   async function loadDishes() {
     try {
-      const response = await fetch('https://edu.std-900.ist.mospolytech.ru/labs/api/dishes');
+      const response = await fetch('https://edu.std-900.ist.mospolytech.ru/labs/api/dishes', {
+        headers: API_KEY ? { 'X-API-Key': API_KEY } : {}
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
