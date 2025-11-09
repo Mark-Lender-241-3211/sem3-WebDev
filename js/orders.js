@@ -4,6 +4,7 @@
 
   const config = window.FC_CONFIG || {};
   const studentId = typeof config.studentId === 'string' ? config.studentId.trim() : '';
+  const apiKey = typeof config.apiKey === 'string' ? config.apiKey.trim() : '';
 
   const state = {
     orders: [],
@@ -45,7 +46,7 @@
     }
 
     try {
-      const res = await fetch(DISHES_URL);
+      const res = await fetch(DISHES_URL, { cache: 'no-store' });
       if (!res.ok) throw new Error(`Ошибка загрузки блюд (${res.status})`);
       const data = await res.json();
       state.dishes = Array.isArray(data) ? data.map(normalizeDish) : [];
@@ -86,7 +87,7 @@
   async function loadOrders() {
     const url = buildOrdersUrl();
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, { cache: 'no-store' });
       if (!res.ok) throw new Error(`Ошибка загрузки заказов (${res.status})`);
       const payload = await res.json();
       state.orders = Array.isArray(payload) ? payload : Array.isArray(payload?.items) ? payload.items : [];
@@ -102,6 +103,7 @@
   function buildOrdersUrl(orderId) {
     const url = new URL(orderId ? `${ORDERS_URL}/${orderId}` : ORDERS_URL);
     if (studentId) url.searchParams.set('student_id', studentId);
+    if (apiKey) url.searchParams.set('api_key', apiKey);
     return url.toString();
   }
 
@@ -537,8 +539,8 @@
     if (text == null) return '';
     return String(text)
       .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
+      .replace(/</g, '<')
+      .replace(/>/g, '>')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
   }
@@ -616,4 +618,3 @@
     setTimeout(() => toast.remove(), 4000);
   }
 })();
-

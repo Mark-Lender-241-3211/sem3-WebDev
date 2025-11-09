@@ -3,21 +3,24 @@
   const STUDENT_ID = typeof CONFIG.studentId === 'string' ? CONFIG.studentId.trim() : '';
   const API_KEY = typeof CONFIG.apiKey === 'string' ? CONFIG.apiKey.trim() : '';
 
-  const LS_SELECTION = 'fc_order_selection'; // ключ с выбранными блюдами (keyword'ы)
-  const LS_FORM      = 'fc_order_form';      // ключ с данными формы
+  const LS_SELECTION = 'fc_order_selection';
+  const LS_FORM = 'fc_order_form';
 
-  // соответствие категорий типам комбо
-  const CAT2TYPE = { soup: 'soup', main_course: 'main', starters: 'salad', beverages: 'drink', desserts: 'desert' };
+  const CAT2TYPE = {
+    soup: 'soup',
+    main_course: 'main',
+    starters: 'salad',
+    beverages: 'drink',
+    desserts: 'desert'
+  };
 
-  // ===== ЗАГРУЗКА БЛЮД С API (исправлено: без пробелов в URL) =====
+  // Загрузка блюд с сервера
   async function loadDishesForOrder() {
-    if (Array.isArray(window.DISHES) && window.DISHES.length > 0) {
-      return; // уже загружено — ничего не делаем
-    }
+    if (Array.isArray(window.DISHES) && window.DISHES.length > 0) return;
 
     try {
       const response = await fetch('https://edu.std-900.ist.mospolytech.ru/labs/api/dishes', {
-        headers: API_KEY ? { 'X-API-Key': API_KEY } : {}
+        cache: 'no-store'
       });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -40,22 +43,45 @@
     } catch (e) {
       console.error('Не удалось загрузить меню на странице заказа:', e);
       window.DISHES = [];
-      // Не показываем alert, чтобы не мешать пользователю
     }
   }
 
-  // ===== LocalStorage helpers =====
-  const readSel  = () => { try { return JSON.parse(localStorage.getItem(LS_SELECTION) || '{}'); } catch { return {}; } };
-  const writeSel = (v)  => { try { localStorage.setItem(LS_SELECTION, JSON.stringify(v)); } catch {} };
+  // LocalStorage helpers
+  const readSel = () => {
+    try {
+      return JSON.parse(localStorage.getItem(LS_SELECTION) || '{}');
+    } catch {
+      return {};
+    }
+  };
+  const writeSel = (v) => {
+    try {
+      localStorage.setItem(LS_SELECTION, JSON.stringify(v));
+    } catch {}
+  };
 
-  const readForm = () => { try { return JSON.parse(localStorage.getItem(LS_FORM) || '{}'); } catch { return {}; } };
-  const writeForm = (v) => { try { localStorage.setItem(LS_FORM, JSON.stringify(v)); } catch {} };
-  const clearForm = () => { try { localStorage.removeItem(LS_FORM); } catch {} };
+  const readForm = () => {
+    try {
+      return JSON.parse(localStorage.getItem(LS_FORM) || '{}');
+    } catch {
+      return {};
+    }
+  };
+  const writeForm = (v) => {
+    try {
+      localStorage.setItem(LS_FORM, JSON.stringify(v));
+    } catch {}
+  };
+  const clearForm = () => {
+    try {
+      localStorage.removeItem(LS_FORM);
+    } catch {}
+  };
 
-  // ===== Dishes helpers =====
+  // Поиск блюда по keyword
   const getDishByKeyword = (kw) => (window.DISHES || []).find(d => d.keyword === kw) || null;
 
-  // ===== Состав заказа (карточки) =====
+  // Карточки заказа
   function createCard(dish) {
     const el = document.createElement('div');
     el.className = 'menu-item';
@@ -103,7 +129,7 @@
     if (totalBlock) totalBlock.hidden = !hasAny;
     if (totalValue) totalValue.textContent = String(total);
 
-    updateLeftFormSummary(); // всегда обновляем сводку формы
+    updateLeftFormSummary();
   }
 
   function bindDelete() {
@@ -127,7 +153,7 @@
     });
   }
 
-  // ===== Левая сводка в форме =====
+  // Левая сводка формы
   function updateLeftFormSummary() {
     const sel = readSel();
     let total = 0;
@@ -158,7 +184,7 @@
     if (totalEl) totalEl.textContent = String(total);
   }
 
-  // ===== Модалка =====
+  // Модалка
   function showModal(message) {
     const prev = document.querySelector('.modal-overlay');
     if (prev) prev.remove();
@@ -176,7 +202,7 @@
     content.querySelector('.modal-btn').addEventListener('click', () => overlay.remove());
   }
 
-  // ===== Проверка комбо =====
+  // Проверка комбо
   function selectedTypes() {
     const sel = readSel();
     return Object.entries(sel)
@@ -192,8 +218,8 @@
     if (isValid) return { valid: true, message: '' };
 
     const sel = readSel();
-    const hasSoup  = !!sel.soup;
-    const hasMain  = !!sel.main_course;
+    const hasSoup = !!sel.soup;
+    const hasMain = !!sel.main_course;
     const hasSalad = !!sel.starters;
     const hasDrink = !!sel.beverages;
 
@@ -212,22 +238,24 @@
     return { valid: false, message };
   }
 
-  // ===== Сохранение данных формы в localStorage =====
+  // Работа с формой
   function hydrateFormFromLS() {
     const data = readForm();
-    const set = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
-    set('name',    data.name || '');
-    set('phone',   data.phone || '');
+    const set = (id, val) => {
+      const el = document.getElementById(id);
+      if (el && val != null) el.value = val;
+    };
+    set('name', data.name || '');
+    set('phone', data.phone || '');
     set('address', data.address || '');
-    set('time',    data.time || '');
+    set('time', data.time || '');
     set('comment', data.comment || '');
     const agree = document.getElementById('agree');
     if (agree) agree.checked = !!data.agree;
 
-    // обновить счётчик символов
     const comment = document.getElementById('comment');
     const counter = document.getElementById('commentCounter');
-    if (comment && counter) counter.textContent = `${Math.min(comment.value.length,200)}/200`;
+    if (comment && counter) counter.textContent = `${Math.min(comment.value.length, 200)}/200`;
   }
 
   function bindFormPersistence() {
@@ -235,29 +263,33 @@
     if (!form) return;
 
     const toObj = () => ({
-      name:    document.getElementById('name')?.value || '',
-      phone:   document.getElementById('phone')?.value || '',
+      name: document.getElementById('name')?.value || '',
+      phone: document.getElementById('phone')?.value || '',
       address: document.getElementById('address')?.value || '',
-      time:    document.getElementById('time')?.value || '',
+      time: document.getElementById('time')?.value || '',
       comment: document.getElementById('comment')?.value || '',
-      agree:   !!document.getElementById('agree')?.checked,
+      agree: !!document.getElementById('agree')?.checked,
     });
 
     form.addEventListener('input', () => writeForm(toObj()));
     form.addEventListener('change', () => writeForm(toObj()));
-    form.addEventListener('reset', () => { clearForm(); setTimeout(hydrateFormFromLS, 0); });
+    form.addEventListener('reset', () => {
+      clearForm();
+      setTimeout(hydrateFormFromLS, 0);
+    });
 
-    // счётчик комментария
     const comment = document.getElementById('comment');
     const counter = document.getElementById('commentCounter');
     if (comment && counter) {
-      const update = () => { counter.textContent = `${Math.min(comment.value.length,200)}/200`; };
+      const update = () => {
+        counter.textContent = `${Math.min(comment.value.length, 200)}/200`;
+      };
       comment.addEventListener('input', update);
       update();
     }
   }
 
-  // ===== Отправка формы =====
+  // Отправка заказа — ГЛАВНОЕ ИСПРАВЛЕНИЕ
   function bindFormSubmit() {
     const form = document.getElementById('orderForm');
     if (!form) return;
@@ -266,56 +298,86 @@
       e.preventDefault();
 
       const { valid, message } = isValidComboAndMessage();
-      if (!valid) { showModal(message); return; }
+      if (!valid) {
+        showModal(message);
+        return;
+      }
 
       const fd = new FormData(form);
+      const sel = readSel();
+
+      // Создаём маппинг keyword → id
+      const keywordToId = {};
+      (window.DISHES || []).forEach(d => {
+        if (d.keyword) keywordToId[d.keyword] = d.id;
+      });
+
       const payload = {
-        name: fd.get('name'),
-        phone: fd.get('phone'),
-        address: fd.get('address'),
-        time: fd.get('time') || '',
-        comment: fd.get('comment') || '',
-        dishes: Object.values(readSel()).filter(Boolean) // массив keyword'ов
+        full_name: fd.get('name')?.toString().trim(),
+        phone: fd.get('phone')?.toString().trim(),
+        delivery_address: fd.get('address')?.toString().trim(),
+        delivery_type: fd.get('time') ? 'by_time' : 'asap',
+        delivery_time: fd.get('time') || null,
+        comment: fd.get('comment')?.toString().trim() || null,
+
+        soup_id: sel.soup ? keywordToId[sel.soup] || null : null,
+        main_course_id: sel.main_course ? keywordToId[sel.main_course] || null : null,
+        salad_id: sel.starters ? keywordToId[sel.starters] || null : null,
+        drink_id: sel.beverages ? keywordToId[sel.beverages] || null : null,
+        dessert_id: sel.desserts ? keywordToId[sel.desserts] || null : null
       };
 
-      try {
-        const url = new URL('https://edu.std-900.ist.mospolytech.ru/labs/api/dishes');
-        if (STUDENT_ID) {
-          url.searchParams.set('student_id', STUDENT_ID);
+      // Обязательные поля
+      const required = ['full_name', 'phone', 'delivery_address'];
+      for (const field of required) {
+        if (!payload[field]) {
+          showModal('Заполните все обязательные поля.');
+          return;
         }
+      }
 
-        const headers = { 'Content-Type': 'application/json' };
-        if (API_KEY) {
-          headers['X-API-Key'] = API_KEY;
-        }
+      // Напиток обязателен
+      if (!payload.drink_id) {
+        showModal('К заказу обязательно нужно выбрать напиток.');
+        return;
+      }
+
+      try {
+        // ПРАВИЛЬНЫЙ ЭНДПОИНТ
+        const ORDERS_ENDPOINT = 'https://edu.std-900.ist.mospolytech.ru/labs/api/orders';
+        const url = new URL(ORDERS_ENDPOINT);
+        if (API_KEY) url.searchParams.set('api_key', API_KEY);
+        if (STUDENT_ID) url.searchParams.set('student_id', STUDENT_ID);
 
         const res = await fetch(url.toString(), {
           method: 'POST',
-          headers: headers,
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-        // успех — очищаем оба ключа
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data.error) {
+          throw new Error(data.error || `HTTP ${res.status}`);
+        }
+
+        // Успешно — очищаем
         localStorage.removeItem(LS_SELECTION);
         clearForm();
         showModal('Заказ успешно оформлен! Спасибо 🧡');
         setTimeout(() => location.href = 'index.html', 1200);
       } catch (err) {
         console.error(err);
-        showModal('Не удалось оформить заказ. Попробуйте ещё раз позже.');
+        showModal('Не удалось оформить заказ. Попробуйте позже.');
       }
     });
   }
 
-  // ===== Инициализация =====
+  // Инициализация
   async function init() {
-    await loadDishesForOrder(); // ←←← КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: ждём загрузку блюд
-
+    await loadDishesForOrder();
     renderGrid();
     updateCardsSummary();
     bindDelete();
-
     hydrateFormFromLS();
     bindFormPersistence();
     bindFormSubmit();

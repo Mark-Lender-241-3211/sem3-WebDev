@@ -1,6 +1,6 @@
 (function () {
   const CONFIG = window.FC_CONFIG || {};
-  const API_KEY = typeof CONFIG.apiKey === 'string' ? CONFIG.apiKey.trim() : '';
+  const API_KEY = ''; // всегда пустой — чтобы не отправлять X-API-Key
 
   const categoryLabels = {
     soup: 'Суп',
