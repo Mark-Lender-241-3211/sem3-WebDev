@@ -5,7 +5,6 @@ const COMBOS = [
   },
   {
     id: 'combo-2',
-
     items: ['soup', 'main', 'drink'],
   },
   {
@@ -21,10 +20,9 @@ const COMBOS = [
     items: ['main', 'drink'],
   },
   {
-    id: 'desert',
+    id: 'combo-desert',
     items: ['desert'],
   }
 ];
- 
-window.COMBOS = COMBOS;
 
+window.COMBOS = COMBOS;

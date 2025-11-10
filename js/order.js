@@ -1,386 +1,298 @@
 (function () {
-  const CONFIG = window.FC_CONFIG || {};
-  const STUDENT_ID = typeof CONFIG.studentId === 'string' ? CONFIG.studentId.trim() : '';
-  const API_KEY = typeof CONFIG.apiKey === 'string' ? CONFIG.apiKey.trim() : '';
-
+  const API_KEY = '4a4017d0-af17-40d9-af18-96b0550c49a9';
   const LS_SELECTION = 'fc_order_selection';
   const LS_FORM = 'fc_order_form';
 
-  const CAT2TYPE = {
-    soup: 'soup',
-    main_course: 'main',
-    starters: 'salad',
-    beverages: 'drink',
-    desserts: 'desert'
+  const API_ROOT = 'https://edu.std-900.ist.mospolytech.ru/labs/api';
+  const CATEGORIES = ['soup', 'main', 'salad', 'drink', 'dessert'];
+
+  let ALL_DISHES = [];
+  let SELECTED_IDS = { soup: null, main: null, salad: null, drink: null, dessert: null };
+
+  const sumMap = {
+    soup: 'sum-soup',
+    main: 'sum-main_course',
+    salad: 'sum-starters',
+    drink: 'sum-beverages',
+    dessert: 'sum-desserts'
   };
 
-  // Загрузка блюд с сервера
-  async function loadDishesForOrder() {
-    if (Array.isArray(window.DISHES) && window.DISHES.length > 0) return;
+  const priceMap = {
+    soup: 'price-soup',
+    main: 'price-main_course',
+    salad: 'price-starters',
+    drink: 'price-beverages',
+    dessert: 'price-desserts'
+  };
 
+  async function loadDishes() {
     try {
-      const response = await fetch('https://edu.std-900.ist.mospolytech.ru/labs/api/dishes', {
-        cache: 'no-store'
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const rawData = await response.json();
-
-      const categoryMap = {
-        'soup': 'soup',
-        'main-course': 'main_course',
-        'salad': 'starters',
-        'drink': 'beverages',
-        'dessert': 'desserts',
-      };
-
-      window.DISHES = rawData.map(dish => ({
-        ...dish,
-        category: categoryMap[dish.category] || dish.category,
-        image: dish.image.trim(),
+      const res = await fetch(`${API_ROOT}/dishes`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      ALL_DISHES = data.map(d => ({
+        ...d,
+        category: d.category === 'main-course' ? 'main' : d.category
       }));
+    } catch (err) {
+      console.error('Ошибка загрузки блюд:', err);
+      ALL_DISHES = [];
+    }
+  }
+
+  function loadSelectionFromLS() {
+    try {
+      const raw = localStorage.getItem(LS_SELECTION);
+      const saved = JSON.parse(raw || '{}');
+      CATEGORIES.forEach(cat => {
+        SELECTED_IDS[cat] = saved[cat] || null;
+      });
     } catch (e) {
-      console.error('Не удалось загрузить меню на странице заказа:', e);
-      window.DISHES = [];
+      console.error('Ошибка загрузки выбора:', e);
     }
   }
 
-  // LocalStorage helpers
-  const readSel = () => {
-    try {
-      return JSON.parse(localStorage.getItem(LS_SELECTION) || '{}');
-    } catch {
-      return {};
-    }
-  };
-  const writeSel = (v) => {
-    try {
-      localStorage.setItem(LS_SELECTION, JSON.stringify(v));
-    } catch {}
-  };
-
-  const readForm = () => {
-    try {
-      return JSON.parse(localStorage.getItem(LS_FORM) || '{}');
-    } catch {
-      return {};
-    }
-  };
-  const writeForm = (v) => {
-    try {
-      localStorage.setItem(LS_FORM, JSON.stringify(v));
-    } catch {}
-  };
-  const clearForm = () => {
-    try {
-      localStorage.removeItem(LS_FORM);
-    } catch {}
-  };
-
-  // Поиск блюда по keyword
-  const getDishByKeyword = (kw) => (window.DISHES || []).find(d => d.keyword === kw) || null;
-
-  // Карточки заказа
-  function createCard(dish) {
-    const el = document.createElement('div');
-    el.className = 'menu-item';
-    el.dataset.cat = dish.category;
-    el.dataset.dish = dish.keyword;
-    el.innerHTML = `
-      <img src="${dish.image}" alt="${dish.name}">
-      <div class="menu-info">
-        <p class="price">${dish.price}₽</p>
-        <p class="name">${dish.name}</p>
-        <p class="weight">${dish.count}</p>
-        <button type="button" class="remove-btn">Удалить</button>
-      </div>
-    `;
-    return el;
+  function getDishById(id) {
+    return ALL_DISHES.find(d => d.id === id) || null;
   }
 
-  function renderGrid() {
+  function renderOrderGrid() {
     const grid = document.getElementById('orderGrid');
     if (!grid) return;
+
     grid.innerHTML = '';
+    const hasAny = CATEGORIES.some(cat => SELECTED_IDS[cat] !== null);
 
-    const sel = readSel();
-    const dishes = Object.values(sel).filter(Boolean).map(getDishByKeyword).filter(Boolean);
-    dishes.forEach(d => grid.appendChild(createCard(d)));
-  }
+    document.getElementById('empty-order').hidden = hasAny;
+    document.getElementById('order-total').hidden = !hasAny;
 
-  function updateCardsSummary() {
-    const grid = document.getElementById('orderGrid');
-    if (!grid) return;
+    if (!hasAny) return;
 
-    const items = grid.querySelectorAll('.menu-item');
-    const total = Array.from(items).reduce((sum, card) => {
-      const p = card.querySelector('.price');
-      const val = p ? parseInt(p.textContent) : 0;
-      return sum + (Number.isFinite(val) ? val : 0);
-    }, 0);
+    CATEGORIES.forEach(cat => {
+      const id = SELECTED_IDS[cat];
+      if (id === null) return;
+      const dish = getDishById(id);
+      if (!dish) return;
 
-    const hasAny = items.length > 0;
-    const emptyNote = document.getElementById('empty-order');
-    const totalBlock = document.getElementById('order-total');
-    const totalValue = document.getElementById('orderTotalValue');
+      const card = document.createElement('div');
+      card.className = 'menu-item';
+      card.innerHTML = `
+        <img src="${dish.image}" alt="${dish.name}">
+        <div class="menu-info">
+          <p class="price">${dish.price}₽</p>
+          <p class="name">${dish.name}</p>
+          <p class="weight">${dish.count}</p>
+          <button type="button" class="remove-btn">Удалить</button>
+        </div>
+      `;
 
-    if (emptyNote) emptyNote.hidden = hasAny;
-    if (totalBlock) totalBlock.hidden = !hasAny;
-    if (totalValue) totalValue.textContent = String(total);
+      card.querySelector('.remove-btn').addEventListener('click', () => {
+        SELECTED_IDS[cat] = null;
+        try {
+          localStorage.setItem(LS_SELECTION, JSON.stringify(SELECTED_IDS));
+        } catch {}
+        renderOrderGrid();
+        updateSummary();
+      });
 
-    updateLeftFormSummary();
-  }
-
-  function bindDelete() {
-    const grid = document.getElementById('orderGrid');
-    if (!grid) return;
-
-    grid.addEventListener('click', (e) => {
-      const btn = e.target.closest('.remove-btn');
-      if (!btn) return;
-      const card = btn.closest('.menu-item');
-      const kw = card?.dataset?.dish;
-      if (!kw) return;
-
-      const sel = readSel();
-      const cat = Object.keys(sel).find(c => sel[c] === kw);
-      if (cat) sel[cat] = null;
-      writeSel(sel);
-
-      card.remove();
-      updateCardsSummary();
+      grid.appendChild(card);
     });
   }
 
-  // Левая сводка формы
-  function updateLeftFormSummary() {
-    const sel = readSel();
+  function updateSummary() {
     let total = 0;
+    CATEGORIES.forEach(cat => {
+      const id = SELECTED_IDS[cat];
+      const dish = id ? getDishById(id) : null;
+      const nameEl = document.getElementById(sumMap[cat]);
+      const priceEl = document.getElementById(priceMap[cat]);
 
-    function fill(cat, empty) {
-      const kw = sel[cat];
-      const nameEl = document.getElementById(`sum-${cat}`);
-      const priceEl = document.getElementById(`price-${cat}`);
-      if (!kw) {
-        if (nameEl) nameEl.textContent = empty;
+      const defaults = {
+        soup: 'Не выбран',
+        main: 'Не выбрано',
+        salad: 'Не выбран',
+        drink: 'Не выбран',
+        dessert: 'Не выбран'
+      };
+
+      if (dish) {
+        if (nameEl) nameEl.textContent = dish.name;
+        if (priceEl) priceEl.textContent = `${dish.price}₽`;
+        total += dish.price;
+      } else {
+        if (nameEl) nameEl.textContent = defaults[cat];
         if (priceEl) priceEl.textContent = '';
-        return;
       }
-      const dish = getDishByKeyword(kw);
-      if (!dish) return;
-      if (nameEl) nameEl.textContent = dish.name;
-      if (priceEl) priceEl.textContent = `${dish.price}₽`;
-      total += dish.price || 0;
-    }
-
-    fill('soup', 'Не выбран');
-    fill('main_course', 'Не выбрано');
-    fill('starters', 'Не выбран');
-    fill('beverages', 'Не выбран');
-    fill('desserts', 'Не выбран');
+    });
 
     const totalEl = document.getElementById('summary-total');
+    const orderTotal = document.getElementById('orderTotalValue');
     if (totalEl) totalEl.textContent = String(total);
+    if (orderTotal) orderTotal.textContent = String(total);
   }
 
-  // Модалка
-  function showModal(message) {
-    const prev = document.querySelector('.modal-overlay');
-    if (prev) prev.remove();
+  // === ФОРМА ===
+  function hydrateFormFromLS() {
+    try {
+      const raw = localStorage.getItem(LS_FORM);
+      const data = JSON.parse(raw || '{}');
+      const fields = ['full_name', 'email', 'phone', 'delivery_address', 'delivery_type', 'delivery_time', 'comment'];
+      fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && data[id] !== undefined) el.value = data[id];
+      });
+      const agree = document.getElementById('agree');
+      if (agree) agree.checked = !!data.agree;
+    } catch (e) {
+      console.error('Ошибка загрузки формы:', e);
+    }
+  }
 
+  function saveFormToLS() {
+    const data = {
+      full_name: document.getElementById('full_name')?.value || '',
+      email: document.getElementById('email')?.value || '',
+      phone: document.getElementById('phone')?.value || '',
+      delivery_address: document.getElementById('delivery_address')?.value || '',
+      delivery_type: document.getElementById('delivery_type')?.value || '',
+      delivery_time: document.getElementById('delivery_time')?.value || '',
+      comment: document.getElementById('comment')?.value || '',
+      agree: !!document.getElementById('agree')?.checked
+    };
+    try {
+      localStorage.setItem(LS_FORM, JSON.stringify(data));
+    } catch (e) {
+      console.error('Ошибка сохранения формы:', e);
+    }
+  }
+
+  function isComboValid() {
+    const has = k => Boolean(SELECTED_IDS[k]);
+    const any = CATEGORIES.some(cat => has(cat));
+    if (!any) return { ok: false, reason: 'empty' };
+    if (!has('drink')) return { ok: false, reason: 'needDrink' };
+    if (has('soup') && !has('main') && !has('salad')) return { ok: false, reason: 'soupNoMainSalad' };
+    if (has('salad') && !has('soup') && !has('main')) return { ok: false, reason: 'saladNoSoupMain' };
+    if (!has('soup') && !has('main') && (has('drink') || has('dessert'))) return { ok: false, reason: 'needMain' };
+    return { ok: true };
+  }
+
+  function comboErrorText(reason) {
+    const messages = {
+      empty: 'Выберите блюда для заказа',
+      needDrink: 'К заказу обязательно нужно выбрать напиток',
+      soupNoMainSalad: 'Выберите главное блюдо или салат',
+      saladNoSoupMain: 'Выберите суп или главное блюдо',
+      needMain: 'Выберите главное блюдо'
+    };
+    return messages[reason] || 'Проверьте состав заказа';
+  }
+
+  function showModal(message) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
-    const content = document.createElement('div');
-    content.className = 'modal-content';
-    content.innerHTML = `
-      <h3 class="modal-title">${message}</h3>
-      <button class="modal-btn">Окей 👌</button>
+    overlay.innerHTML = `
+      <div class="modal-content">
+        <h3>${message}</h3>
+        <button class="modal-btn">Окей 👌</button>
+      </div>
     `;
-    overlay.appendChild(content);
     document.body.appendChild(overlay);
-    content.querySelector('.modal-btn').addEventListener('click', () => overlay.remove());
+    overlay.querySelector('.modal-btn').addEventListener('click', () => overlay.remove());
   }
 
-  // Проверка комбо
-  function selectedTypes() {
-    const sel = readSel();
-    return Object.entries(sel)
-      .filter(([, kw]) => !!kw)
-      .map(([cat]) => CAT2TYPE[cat]);
-  }
+  async function submitOrder(e) {
+    e.preventDefault();
 
-  function isValidComboAndMessage() {
-    const types = selectedTypes();
-    const isValid = (window.COMBOS || []).some(combo =>
-      combo.items.every(item => types.includes(item))
-    );
-    if (isValid) return { valid: true, message: '' };
-
-    const sel = readSel();
-    const hasSoup = !!sel.soup;
-    const hasMain = !!sel.main_course;
-    const hasSalad = !!sel.starters;
-    const hasDrink = !!sel.beverages;
-
-    let message = '';
-    if ((hasSoup || hasMain || hasSalad) && !hasDrink) {
-      message = 'Выберите напиток';
-    } else if (hasSoup && !(hasMain || hasSalad)) {
-      message = 'Выберите главное блюдо или салат';
-    } else if (hasSalad && !(hasSoup || hasMain)) {
-      message = 'Выберите суп или главное блюдо';
-    } else if (hasMain && !(hasSoup || hasSalad)) {
-      message = 'Выберите салат или суп';
-    } else {
-      message = 'Выберите блюда, соответствующие одному из комбо';
+    const combo = isComboValid();
+    if (!combo.ok) {
+      showModal(comboErrorText(combo.reason));
+      return;
     }
-    return { valid: false, message };
-  }
 
-  // Работа с формой
-  function hydrateFormFromLS() {
-    const data = readForm();
-    const set = (id, val) => {
-      const el = document.getElementById(id);
-      if (el && val != null) el.value = val;
+    const fd = new FormData(e.target);
+    const required = ['full_name', 'email', 'phone', 'delivery_address', 'delivery_type'];
+    const empty = required.find(name => !fd.get(name)?.trim());
+    if (empty || !fd.get('agree')) {
+      showModal('Заполните все обязательные поля и согласитесь на обработку данных.');
+      return;
+    }
+
+    // ✅ ИСПРАВЛЕНИЕ: время доставки обязательно ТОЛЬКО для "by_time"
+    if (fd.get('delivery_type') === 'by_time' && !fd.get('delivery_time')) {
+      showModal('Укажите время доставки.');
+      return;
+    }
+
+    const payload = {
+      full_name: fd.get('full_name').trim(),
+      email: fd.get('email').trim(),
+      phone: fd.get('phone').trim(),
+      delivery_address: fd.get('delivery_address').trim(),
+      delivery_type: fd.get('delivery_type'),
+      delivery_time: fd.get('delivery_time') || null,
+      comment: fd.get('comment')?.trim() || '',
+      subscribe: 0,
+
+      soup_id: SELECTED_IDS.soup,
+      main_course_id: SELECTED_IDS.main,
+      salad_id: SELECTED_IDS.salad,
+      drink_id: SELECTED_IDS.drink,
+      dessert_id: SELECTED_IDS.dessert
     };
-    set('name', data.name || '');
-    set('phone', data.phone || '');
-    set('address', data.address || '');
-    set('time', data.time || '');
-    set('comment', data.comment || '');
-    const agree = document.getElementById('agree');
-    if (agree) agree.checked = !!data.agree;
 
-    const comment = document.getElementById('comment');
-    const counter = document.getElementById('commentCounter');
-    if (comment && counter) counter.textContent = `${Math.min(comment.value.length, 200)}/200`;
-  }
-
-  function bindFormPersistence() {
-    const form = document.getElementById('orderForm');
-    if (!form) return;
-
-    const toObj = () => ({
-      name: document.getElementById('name')?.value || '',
-      phone: document.getElementById('phone')?.value || '',
-      address: document.getElementById('address')?.value || '',
-      time: document.getElementById('time')?.value || '',
-      comment: document.getElementById('comment')?.value || '',
-      agree: !!document.getElementById('agree')?.checked,
-    });
-
-    form.addEventListener('input', () => writeForm(toObj()));
-    form.addEventListener('change', () => writeForm(toObj()));
-    form.addEventListener('reset', () => {
-      clearForm();
-      setTimeout(hydrateFormFromLS, 0);
-    });
-
-    const comment = document.getElementById('comment');
-    const counter = document.getElementById('commentCounter');
-    if (comment && counter) {
-      const update = () => {
-        counter.textContent = `${Math.min(comment.value.length, 200)}/200`;
-      };
-      comment.addEventListener('input', update);
-      update();
-    }
-  }
-
-  // Отправка заказа — ГЛАВНОЕ ИСПРАВЛЕНИЕ
-  function bindFormSubmit() {
-    const form = document.getElementById('orderForm');
-    if (!form) return;
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const { valid, message } = isValidComboAndMessage();
-      if (!valid) {
-        showModal(message);
-        return;
-      }
-
-      const fd = new FormData(form);
-      const sel = readSel();
-
-      // Создаём маппинг keyword → id
-      const keywordToId = {};
-      (window.DISHES || []).forEach(d => {
-        if (d.keyword) keywordToId[d.keyword] = d.id;
+    try {
+      const url = `${API_ROOT}/orders?api_key=${encodeURIComponent(API_KEY)}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
 
-      const payload = {
-        full_name: fd.get('name')?.toString().trim(),
-        phone: fd.get('phone')?.toString().trim(),
-        delivery_address: fd.get('address')?.toString().trim(),
-        delivery_type: fd.get('time') ? 'by_time' : 'asap',
-        delivery_time: fd.get('time') || null,
-        comment: fd.get('comment')?.toString().trim() || null,
-
-        soup_id: sel.soup ? keywordToId[sel.soup] || null : null,
-        main_course_id: sel.main_course ? keywordToId[sel.main_course] || null : null,
-        salad_id: sel.starters ? keywordToId[sel.starters] || null : null,
-        drink_id: sel.beverages ? keywordToId[sel.beverages] || null : null,
-        dessert_id: sel.desserts ? keywordToId[sel.desserts] || null : null
-      };
-
-      // Обязательные поля
-      const required = ['full_name', 'phone', 'delivery_address'];
-      for (const field of required) {
-        if (!payload[field]) {
-          showModal('Заполните все обязательные поля.');
-          return;
-        }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Ошибка сервера');
       }
 
-      // Напиток обязателен
-      if (!payload.drink_id) {
-        showModal('К заказу обязательно нужно выбрать напиток.');
-        return;
-      }
+      localStorage.removeItem(LS_SELECTION);
+      localStorage.removeItem(LS_FORM);
+      showModal('Заказ успешно оформлен! Спасибо 🧡');
+      setTimeout(() => location.href = 'index.html', 1200);
 
-      try {
-        // ПРАВИЛЬНЫЙ ЭНДПОИНТ
-        const ORDERS_ENDPOINT = 'https://edu.std-900.ist.mospolytech.ru/labs/api/orders';
-        const url = new URL(ORDERS_ENDPOINT);
-        if (API_KEY) url.searchParams.set('api_key', API_KEY);
-        if (STUDENT_ID) url.searchParams.set('student_id', STUDENT_ID);
-
-        const res = await fetch(url.toString(), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok || data.error) {
-          throw new Error(data.error || `HTTP ${res.status}`);
-        }
-
-        // Успешно — очищаем
-        localStorage.removeItem(LS_SELECTION);
-        clearForm();
-        showModal('Заказ успешно оформлен! Спасибо 🧡');
-        setTimeout(() => location.href = 'index.html', 1200);
-      } catch (err) {
-        console.error(err);
-        showModal('Не удалось оформить заказ. Попробуйте позже.');
-      }
-    });
+    } catch (err) {
+      console.error('Ошибка:', err);
+      showModal(`Ошибка: ${err.message}`);
+    }
   }
 
-  // Инициализация
+  // === ИНИЦИАЛИЗАЦИЯ ===
   async function init() {
-    await loadDishesForOrder();
-    renderGrid();
-    updateCardsSummary();
-    bindDelete();
+    await loadDishes();
+    loadSelectionFromLS();
+    renderOrderGrid();
+    updateSummary();
     hydrateFormFromLS();
-    bindFormPersistence();
-    bindFormSubmit();
+
+    const form = document.getElementById('orderForm');
+    if (form) {
+      form.addEventListener('submit', submitOrder);
+      form.addEventListener('input', saveFormToLS);
+      form.addEventListener('change', saveFormToLS);
+    }
+
+    // Обработчик времени доставки
+    const deliveryType = document.getElementById('delivery_type');
+    const timeGroup = document.getElementById('delivery_time_group');
+    if (deliveryType && timeGroup) {
+      deliveryType.addEventListener('change', () => {
+        if (deliveryType.value === 'by_time') {
+          timeGroup.style.display = 'block';
+        } else {
+          timeGroup.style.display = 'none';
+          document.getElementById('delivery_time').value = '';
+        }
+      });
+    }
   }
 
   if (document.readyState === 'loading') {

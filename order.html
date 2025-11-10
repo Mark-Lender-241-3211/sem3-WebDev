@@ -7,7 +7,6 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="index.css">
-  <!-- стили карточек и ИМЕННО та же форма (#order_form) -->
   <link rel="stylesheet" href="set-lunch.css">
   <link rel="stylesheet" href="order.css">
 </head>
@@ -42,7 +41,7 @@
     </div>
   </section>
 
-  <!-- РОВНО та же форма (id и классы сохранены) -->
+  <!-- Форма оформления заказа -->
   <section id="order_form">
     <h2>Оформление заказа</h2>
 
@@ -91,10 +90,16 @@
       <div class="client-data-block">
         <h3>Данные получателя</h3>
 
+        <!-- ⚠️ ВАЖНО: форма с id="orderForm" -->
         <form id="orderForm" class="order-form">
           <div class="form-group">
-            <label for="name">Имя</label>
-            <input id="name" type="text" name="name" required placeholder="Ваше имя">
+            <label for="full_name">Имя</label>
+            <input id="full_name" type="text" name="full_name" required placeholder="Ваше имя">
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input id="email" type="email" name="email" required placeholder="Ваш email">
           </div>
 
           <div class="form-group">
@@ -103,13 +108,22 @@
           </div>
 
           <div class="form-group">
-            <label for="address">Адрес доставки</label>
-            <input id="address" type="text" name="address" required placeholder="Город, улица, дом, квартира">
+            <label for="delivery_address">Адрес доставки</label>
+            <input id="delivery_address" type="text" name="delivery_address" required placeholder="Город, улица, дом, квартира">
           </div>
 
           <div class="form-group">
-            <label for="time">Время доставки</label>
-            <input id="time" type="time" name="time">
+            <label for="delivery_type">Тип доставки</label>
+            <select id="delivery_type" name="delivery_type" required>
+              <option value="">Выберите тип доставки</option>
+              <option value="asap">Как можно скорее</option>
+              <option value="by_time">К определённому времени</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="delivery_time_group" style="display: none;">
+            <label for="delivery_time">Время доставки</label>
+            <input id="delivery_time" name="delivery_time" type="time">
             <span class="delivery-info">Ориентировочное окно доставки — 30 минут.</span>
           </div>
 
@@ -120,7 +134,7 @@
           </div>
 
           <div class="form-group checkbox-group">
-            <input id="agree" type="checkbox">
+            <input id="agree" name="agree" type="checkbox" required>
             <label for="agree">Я согласен(а) на обработку персональных данных</label>
           </div>
 
@@ -144,9 +158,22 @@
   </section>
 </footer>
 
-<!-- Комбо (для проверки на отправку) -->
+<!-- Комбо -->
 <script src="js/combosList.js"></script>
-<!-- Логика страницы -->
+<!-- Логика -->
 <script src="js/order.js"></script>
+
+<!-- Скрипт для показа времени -->
+<script>
+  document.getElementById('delivery_type')?.addEventListener('change', function() {
+    const timeGroup = document.getElementById('delivery_time_group');
+    if (this.value === 'by_time') {
+      timeGroup.style.display = 'block';
+    } else {
+      timeGroup.style.display = 'none';
+      document.getElementById('delivery_time').value = '';
+    }
+  });
+</script>
 </body>
 </html>

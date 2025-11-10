@@ -1,10 +1,10 @@
 (function () {
+  // === НАСТРОЙКИ — ЗАМЕНИТЕ НА СВОИ! ===
+  const STUDENT_ID = 'ВАШ_СТУДЕНЧЕСКИЙ_ID'; // ← замените!
+  const API_KEY = '4a4017d0-af17-40d9-af18-96b0550c49a9'; // как в order.js
+
   const ORDERS_URL = 'https://edu.std-900.ist.mospolytech.ru/labs/api/orders';
   const DISHES_URL = 'https://edu.std-900.ist.mospolytech.ru/labs/api/dishes';
-
-  const config = window.FC_CONFIG || {};
-  const studentId = typeof config.studentId === 'string' ? config.studentId.trim() : '';
-  const apiKey = typeof config.apiKey === 'string' ? config.apiKey.trim() : '';
 
   const state = {
     orders: [],
@@ -27,14 +27,8 @@
   });
 
   async function init() {
-    if (!studentId) {
-      console.warn('studentId не задан. Запросы будут выполняться без фильтрации.');
-      showToast('Укажите studentId в файле js/config.js, чтобы видеть свои заказы.', 'error');
-    }
-
     await ensureDishes();
     await loadOrders();
-
     dom.tableBody.addEventListener('click', handleActionClick);
   }
 
@@ -62,11 +56,13 @@
 
   function normalizeDish(dish) {
     if (!dish) return dish;
+    // Приводим категории к тем, что использует order.js
     const categoryMap = {
-      'main-course': 'main_course',
-      salad: 'starters',
-      drink: 'beverages',
-      dessert: 'desserts',
+      'main-course': 'main',
+      'salad': 'salad',
+      'drink': 'drink',
+      'dessert': 'dessert',
+      'soup': 'soup',
     };
     return {
       ...dish,
@@ -80,7 +76,7 @@
     state.dishes.forEach((dish) => {
       if (!dish) return;
       if (dish.keyword) state.dishIndex.set(dish.keyword, dish);
-      if (dish.id) state.dishIndex.set(String(dish.id), dish);
+      if (dish.id != null) state.dishIndex.set(String(dish.id), dish);
     });
   }
 
@@ -102,8 +98,8 @@
 
   function buildOrdersUrl(orderId) {
     const url = new URL(orderId ? `${ORDERS_URL}/${orderId}` : ORDERS_URL);
-    if (studentId) url.searchParams.set('student_id', studentId);
-    if (apiKey) url.searchParams.set('api_key', apiKey);
+    if (STUDENT_ID) url.searchParams.set('student_id', STUDENT_ID);
+    if (API_KEY) url.searchParams.set('api_key', API_KEY);
     return url.toString();
   }
 
@@ -418,42 +414,58 @@
     return payload;
   }
 
-  function formatOrderComposition(order) {
-    const items = extractOrderItems(order);
-    const names = items.map((item) => {
-      const dish = resolveDish(item);
-      return dish?.name || item?.name || item?.title || item?.keyword || 'Неизвестное блюдо';
-    });
-    return names.length ? names.join(', ') : '—';
-  }
-
-  function formatDishDetails(order, withPrice) {
-    const items = extractOrderItems(order);
-    return items.map((item) => {
-      const dish = resolveDish(item);
-      const name = dish?.name || item?.name || item?.title || item?.keyword || 'Неизвестное блюдо';
-      if (!withPrice) return name;
-      const price = extractItemPrice(item, dish);
-      return price != null ? `${name} (${price}₽)` : name;
-    });
-  }
-
+  // === КРИТИЧЕСКИ ВАЖНАЯ ФУНКЦИЯ — ИСПРАВЛЕНА ===
   function extractOrderItems(order) {
     if (!order) return [];
+
+    // Сначала попробуем найти массив блюд (если API его даёт)
     if (Array.isArray(order.dishes)) return order.dishes;
     if (Array.isArray(order.items)) return order.items;
     if (Array.isArray(order.order_items)) return order.order_items;
     if (Array.isArray(order.orderItems)) return order.orderItems;
-    return [];
+
+    // Если массива нет — строим вручную из полей, как в order.js
+    const mappings = [
+      { field: 'soup_id', category: 'soup' },
+      { field: 'main_course_id', category: 'main' },
+      { field: 'salad_id', category: 'salad' },
+      { field: 'drink_id', category: 'drink' },
+      { field: 'dessert_id', category: 'dessert' }
+    ];
+
+    const items = [];
+    for (const { field, category } of mappings) {
+      const id = order[field];
+      if (id != null) {
+        items.push({ id: id, category });
+      }
+    }
+    return items;
   }
 
   function resolveDish(item) {
     if (!item) return null;
-    if (item.keyword && state.dishIndex.has(item.keyword)) return state.dishIndex.get(item.keyword);
-    if (item.dish && item.dish.keyword && state.dishIndex.has(item.dish.keyword)) return state.dishIndex.get(item.dish.keyword);
-    if (typeof item === 'string' && state.dishIndex.has(item)) return state.dishIndex.get(item);
-    if (item.id && state.dishIndex.has(String(item.id))) return state.dishIndex.get(String(item.id));
-    return item.dish || null;
+
+    // Если item — это строка (keyword)
+    if (typeof item === 'string' && state.dishIndex.has(item)) {
+      return state.dishIndex.get(item);
+    }
+
+    // Если item — объект с id
+    if (typeof item === 'object') {
+      if (item.id != null && state.dishIndex.has(String(item.id))) {
+        return state.dishIndex.get(String(item.id));
+      }
+      if (item.keyword && state.dishIndex.has(item.keyword)) {
+        return state.dishIndex.get(item.keyword);
+      }
+      // Если у item есть вложенный dish
+      if (item.dish) {
+        return resolveDish(item.dish);
+      }
+    }
+
+    return null;
   }
 
   function extractItemPrice(item, dish) {
@@ -474,9 +486,30 @@
     if (order.totalPrice != null) return order.totalPrice;
     if (order.total != null) return order.total;
     if (order.price != null) return order.price;
+
     const items = extractOrderItems(order);
     if (!items.length) return null;
     return items.reduce((sum, item) => sum + (Number(extractItemPrice(item, resolveDish(item))) || 0), 0);
+  }
+
+  function formatOrderComposition(order) {
+    const items = extractOrderItems(order);
+    const names = items.map((item) => {
+      const dish = resolveDish(item);
+      return dish?.name || item?.name || item?.title || item?.keyword || 'Неизвестное блюдо';
+    });
+    return names.length ? names.join(', ') : '—';
+  }
+
+  function formatDishDetails(order, withPrice) {
+    const items = extractOrderItems(order);
+    return items.map((item) => {
+      const dish = resolveDish(item);
+      const name = dish?.name || item?.name || item?.title || item?.keyword || 'Неизвестное блюдо';
+      if (!withPrice) return name;
+      const price = extractItemPrice(item, dish);
+      return price != null ? `${name} (${price}₽)` : name;
+    });
   }
 
   function formatPrice(value) {
