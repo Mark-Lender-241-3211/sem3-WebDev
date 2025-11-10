@@ -1,7 +1,6 @@
 (function () {
-  // === НАСТРОЙКИ — ЗАМЕНИТЕ НА СВОИ! ===
-  const STUDENT_ID = 'ВАШ_СТУДЕНЧЕСКИЙ_ID'; // ← замените!
-  const API_KEY = '4a4017d0-af17-40d9-af18-96b0550c49a9'; // как в order.js
+  const STUDENT_ID = '123456';
+  const API_KEY = '4a4017d0-af17-40d9-af18-96b0550c49a9';
 
   const ORDERS_URL = 'https://edu.std-900.ist.mospolytech.ru/labs/api/orders';
   const DISHES_URL = 'https://edu.std-900.ist.mospolytech.ru/labs/api/dishes';
