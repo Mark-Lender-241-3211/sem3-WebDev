@@ -1,161 +1,134 @@
-/*  Универсальный селектор — box-sizing: border-box */
-* {
-    box-sizing: border-box;
-}
-
-/* Стиль хедера */
-
-nav a.active {
-    color: tomato;
-}
-
+/* Подключение шрифта и настройка базовых стилей */
 body {
-    margin: 0;
-    font-family: 'Roboto', sans-serif; /* Google Font */
-    font-size: 1.25rem;
-    color: #333; /* Цвет текста по умолчанию */
+  font-family: 'Roboto', sans-serif;
 }
 
-header {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background-color: black;
-    color: white;
-    padding: 10px 20px;
-    font-size: 1.25rem;
-    font-family: 'Roboto', sans-serif;
-    margin: 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+/* Логотип */
+.brand-logo {
+  font-weight: 800;
+  letter-spacing: 0.4px;
 }
 
-header h1 {
-    margin: 0;
+/* Hero — фоновое изображение */
+.hero-section {
+  background-image: url('images/Mmmm_its_so_testy.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  color: white;
 }
 
-header ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    display: flex;
-    gap: 35px;
+/* Hero section — фоновое изображение */
+.hero-section {
+  background-image: url('images/Mmmm_its_so_testy.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  min-height: 60vh;
+  padding: 2rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-
-/* Стили для ссылок */
-header a {
-    color: white;
-    text-decoration: none;
-    font-family: 'Roboto', sans-serif;
-    font-size: 1.25rem;
+/* Полупрозрачная белая карточка */
+.hero-card {
+  max-width: 800px;
+  width: 100%;
+  background-color: white;
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
 }
 
-header a:hover {
-    color: #ccc; /* Изменение цвета при наведении */
+/* Опционально: добавить блюр для эффекта "стекла" */
+.hero-card {
+  backdrop-filter: blur(10px); /* Эффект размытия фона за карточкой */
 }
 
-
-/* Стили для основного контейнера */
-.main_container {
-    padding: 50px ;
+/* Адаптивность */
+@media (max-width: 768px) {
+  .hero-card {
+    margin: 0 1rem;
+    padding: 1.5rem;
+  }
 }
 
-/* Стили для изображений */
-.image_conteiner {
-    display: flex;
-    justify-content: space-between; /* или space-around, center */
-    gap: 5%; /* отступ между картинками — например, 5% */
-    margin-top: 30px;
-    padding: 0 10px; /* небольшой отступ по бокам, чтобы не прилипали к краю */
+.text-orange {
+  color: #fbff00;
 }
 
-.image_conteiner img {
-    width: 47.5%; /* (100% - 5% gap) / 2 = 47.5% */
-    height: auto;
-    border-radius: 12px;
+/* Затемнение фона для читаемости текста */
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5); /* полупрозрачный оверлей */
+  z-index: -1;
 }
 
-/* Стили для таблиц */
-.table-style {
-    width: 40%;
-    font-family: 'Roboto', sans-serif;
-    border-collapse: collapse;
-    margin: 20px 0;
+/* Основной контейнер Hero должен быть относительным */
+#hero {
+  position: relative;
 }
 
-.table-style th,
-.table-style td {
-    padding: 10px;
-    text-align: center;
-    border: 1px solid black;
+/* Иконки преимуществ */
+.feature-icon {
+  font-size: 2.2rem;
+  color: var(--bs-primary);
 }
 
-.table-style th {
-    background-color: white;
-    text-align: left;
-    font-weight: bold;
+/* Цвета Bootstrap*/
+:root {
+  --bs-primary: #ff684e;
+  --bs-primary-rgb: 255, 104, 78;
 }
 
-.table-style tr:nth-child(even) {
-    background-color: #f9f9f9;
+/* Стили таблицы */
+.table {
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-/* Стили для футера */
-
-footer {
-    background-color: black;
-    color: white;
-    margin-top: 10px;
-    padding: 10px;
-    font-family: 'Roboto', sans-serif;
-    font-size: 1.25rem;
-    margin: 0;
+/* Кнопки в Hero */
+.hero-section .btn {
+  min-width: 180px;
 }
 
-/* Адаптивность для хедера */
-
-/* До 800px — выравнивание навигации */
-@media (max-width: 800px) {
-    header nav ul {
-        justify-content: space-between;
-    }
+/* Белая кнопка "Связаться с нами" */
+.btn-white {
+  background-color: white;
+  color: #212529;
+  border: 1px solid #dee2e6;
+}
+.btn-white:hover {
+  background-color: #f8f9fa;
+  border-color: #ced4da;
 }
 
-/* До 600px — мобильная версия хедера */
-@media (max-width: 600px) {
-    /* Изменить layout хедера для мобильных устройств */
-    header {
-        flex-direction: row; /* Горизонтальное расположение */
-        justify-content: space-between; /* Заголовок слева, меню справа */
-        align-items: center; /* Центрирование по высоте */
-        gap: 15px;
-        padding: 10px 15px;
-    }
-    
-    /* Заголовок слева, центрированный по высоте */
-    header h1 {
-        text-align: left;
-        margin: 0;
-        font-size: 1.1rem; /* Уменьшаем размер заголовка */
-        flex: 0 0 auto; /* Не растягивается */
-    }
-    
-    /* Навигационное меню справа - вертикальное направление */
-    header nav {
-        flex: 0 0 auto; /* Не растягивается */
-    }
-    
-    header nav ul {
-        flex-direction: column;
-        align-items: flex-end; /* Выравнивание по правому краю */
-        gap: 8px;
-        justify-content: center;
-    }
-    
-    /* Уменьшаем шрифт для ссылок навигации */
-    header nav ul a {
-        font-size: 1.1rem; /* Уменьшаем размер ссылок */
-    }
+/* Мягкий CTA блок — как на втором скриншоте */
+.soft-cta {
+  background-color: #dbbab134; /* мягкий оранжевый */
+  color: white;
+  padding: 3rem 1rem;
+}
+.soft-cta .btn {
+  background-color: white;
+  color: #ff7a59;
+  border: none;
+  font-weight: bold;
+}
+.soft-cta .btn:hover {
+  background-color: #f8f9fa;
+  color: #ff7a59;
+}
+
+/* Адаптивность: на малых экранах убираем тень у карточек */
+@media (max-width: 768px) {
+  .card {
+    border: none;
+  }
 }
